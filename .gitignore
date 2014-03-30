@@ -1,0 +1,13 @@
+out/*
+target/*
+project/target/*
+project/project/*
+js/target/*
+js/project/target/*
+js/project/project/*
+playjson/target/*
+playjson/project/target/*
+playjson/project/project/*
+.idea/*
+.idea_modules/*
+*.iml
