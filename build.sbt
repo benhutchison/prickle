@@ -30,6 +30,6 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 
 resolvers += Resolver.sonatypeRepo("releases")
 
-scalacOptions ++= Seq("-Ymacro-debug-lite")
+//scalacOptions ++= Seq("-Ymacro-debug-lite")
 
 //scalacOptions ++= Seq("-Xlog-implicits")
