@@ -1,26 +1,27 @@
 package prickle
 
 import scala.language.experimental.macros
-import scala.reflect.ClassTag
-import scala.util.{Try, Success, Failure}
 
+
+/** Use this object to invoke Pickling from user code */
+object Pickle {
+
+  def apply[A, P](value: A)(implicit p: Pickler[A], builder: PBuilder[P]): P = p.pickle(value)
+}
+
+/** You should not need to implement this for the supported use cases:
+  * - Primitives and Strings
+  * - Case classes and case objects
+  * - Maps, Sets and Seqs
+  * - Class-hierarchies supported via composite picklers
+  * */
 trait Pickler[A] {
 
   def pickle[P](obj: A)(implicit builder: PBuilder[P]): P
 }
 
-
-trait MaterializePicklerFallback {
-  
-  implicit def materializePickler[T]: Pickler[T] =
-    macro PicklerMaterializersImpl.materializePickler[T]
-
-}
+/** Do not import this companion object into scope in user code.*/
 object Pickler extends MaterializePicklerFallback {
-
-  implicit class RichPicklee[A](value: A)(implicit p: Pickler[A]) {
-    def pickle[P](implicit builder: PBuilder[P]): P = p.pickle(value)
-  }
 
   implicit object BooleanPickler extends Pickler[Boolean] {
     def pickle[P](x: Boolean)(implicit builder: PBuilder[P]): P = builder.makeBoolean(x)
@@ -63,4 +64,19 @@ object Pickler extends MaterializePicklerFallback {
     def pickle[P](x: String)(implicit builder: PBuilder[P]): P = builder.makeString(x)
   }
 
+  implicit def mapPickler[K, V](implicit kp: Pickler[K], vp: Pickler[V]) = new Pickler[Map[K, V]] {
+    def pickle[P](value: Map[K, V])(implicit builder: PBuilder[P]): P = {
+      builder.makeArray(value.map(kv => {
+        val (k, v) = kv
+        builder.makeArray(kp.pickle(k), vp.pickle(v))
+      }).toSeq: _*)
+    }
+  }
+
+  implicit def toPickler[A <: AnyRef](implicit pair: PicklerPair[A]): Pickler[A] = pair.pickler
+}
+trait MaterializePicklerFallback {
+
+  implicit def materializePickler[T]: Pickler[T] =
+  macro PicklerMaterializersImpl.materializePickler[T]
 }

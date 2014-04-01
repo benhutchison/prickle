@@ -17,7 +17,7 @@ trait DefaultPickleFormat {
     def makeBoolean(b: Boolean): PFormat = PBoolean(b)
     def makeNumber(x: Double): PFormat = PNumber(x)
     def makeString(s: String): PFormat = PString(s)
-    def makeArray(elems: PFormat*): PFormat = PArray(elems)
+    def makeArray(elems: PFormat*): PFormat = PArray(elems.toList)
     def makeObject(fields: (String, PFormat)*): PFormat = PObject(fields.toMap)
   }
 

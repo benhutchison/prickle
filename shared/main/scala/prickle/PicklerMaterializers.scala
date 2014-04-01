@@ -32,7 +32,7 @@ object PicklerMaterializersImpl {
         val fieldName = accessor.name
         val fieldString = fieldName.toString()
 
-        val fieldPickle = q"value.$fieldName.pickle"
+        val fieldPickle = q"prickle.Pickle(value.$fieldName)"
 
         val nullSafeFieldPickle =
           if (accessor.returnType.typeSymbol.asClass.isPrimitive)
@@ -45,14 +45,15 @@ object PicklerMaterializersImpl {
 
       q"""builder.makeObject(..$pickleFields)"""
     }
+    val name = newTermName(c.fresh("GenPickler"))
 
     val result = q"""
-      implicit object GenPickler extends prickle.Pickler[$tpe] {
+      implicit object $name extends prickle.Pickler[$tpe] {
         import prickle._
         override def pickle[P](value: $tpe)(
             implicit builder: PBuilder[P]): P = $pickleLogic
       }
-      GenPickler
+      $name
     """
 
     c.Expr[Pickler[T]](result)
@@ -94,7 +95,7 @@ object PicklerMaterializersImpl {
         val fieldTpe = accessor.returnType
         q"""
             reader.readObjectField(pickle, ${fieldName.toString}).flatMap(field =>
-              prickle.Unpickler.to[$fieldTpe].unpickle(field)(reader)).get
+              prickle.Unpickle[$fieldTpe].from(field)(reader)).get
         """
       }
       q"""new $tpe(..$unpickledFields)"""
@@ -107,8 +108,10 @@ object PicklerMaterializersImpl {
     else
       q"null"
 
+    val name = newTermName(c.fresh("GenUnpickler"))
+
     val result = q"""
-      implicit object GenUnpickler extends prickle.Unpickler[$tpe] {
+      implicit object $name extends prickle.Unpickler[$tpe] {
         import prickle._
         import scala.util.Try
         override def unpickle[P](pickle: P)(
@@ -119,7 +122,7 @@ object PicklerMaterializersImpl {
               $unpickleLogic
           }
       }
-      GenUnpickler
+      $name
     """
 
     c.Expr[Unpickler[T]](result)

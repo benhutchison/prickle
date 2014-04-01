@@ -3,19 +3,28 @@ package prickle
 import scala.util.{Success, Failure, Try}
 import scala.language.experimental.macros
 
+/** Use this object to invoke Unpickling from user code */
+object Unpickle {
+
+  def apply[A](implicit u: Unpickler[A]) = UnpickledCurry[A](u)
+}
+case class UnpickledCurry[A](u: Unpickler[A]) {
+  def from[P](p: P)(implicit reader: PReader[P]): Try[A] = u.unpickle(p)
+}
+
+/** You should not need to implement this for the supported use cases:
+  * - Primitives and Strings
+  * - Case classes and case objects
+  * - Maps, Sets and Seqs
+  * - Class-hierarchies supported via composite picklers
+  * */
 trait Unpickler[A] {
 
   def unpickle[P](pickle: P)(implicit reader: PReader[P]): Try[A]
 }
 
-trait MaterializeUnpicklerFallback {
-
-  implicit def materializeUnpickler[T]: Unpickler[T] =
-    macro PicklerMaterializersImpl.materializeUnpickler[T]
-}
+/** Do not import this companion object into scope in user code.*/
 object Unpickler extends MaterializeUnpicklerFallback {
-
-  def to[A](implicit u: Unpickler[A]) = UnpickledCurry[A](u)
 
   implicit object BooleanUnpickler extends Unpickler[Boolean] {
     def unpickle[P](pickle: P)(implicit reader: PReader[P]) = reader.readBoolean(pickle)
@@ -56,10 +65,40 @@ object Unpickler extends MaterializeUnpicklerFallback {
   }
 
   implicit object StringUnpickler extends Unpickler[String] {
-    def unpickle[P](pickle: P)(implicit reader: PReader[P]) = reader.readString(pickle)
+    def unpickle[P](pickle: P)(implicit reader: PReader[P]) = {
+      if (reader.isNull(pickle))
+        Success(null)
+      else
+        reader.readString(pickle)
+    }
   }
+
+  implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]) =  new Unpickler[Map[K, V]] {
+    def unpickle[P](pickle: P)(implicit reader: PReader[P]): Try[Map[K, V]] = {
+
+      val KeyIndex = 0
+      val ValueIndex = 1
+      for {
+        len <- reader.readArrayLength(pickle)
+        kvs <- Try {
+          (0 until len).toList.map(index => for {
+            entryPickle <- reader.readArrayElem(pickle, index)
+            kp <- reader.readArrayElem(entryPickle, KeyIndex)
+            k <- ku.unpickle(kp)
+            vp <- reader.readArrayElem(entryPickle, ValueIndex)
+            v <- vu.unpickle(vp)
+          } yield k -> v).map(_.get)
+        }
+      } yield
+        kvs.foldLeft(Map.empty[K, V])((m, kv) => m.updated(kv._1, kv._2))
+    }
+  }
+
+  implicit def toUnpickler[A <: AnyRef](implicit pair: PicklerPair[A]): Unpickler[A] = pair.unpickler
+}
+trait MaterializeUnpicklerFallback {
+
+  implicit def materializeUnpickler[T]: Unpickler[T] =
+  macro PicklerMaterializersImpl.materializeUnpickler[T]
 }
 
-case class UnpickledCurry[A](u: Unpickler[A]) {
-  def unpickle[P](p: P)(implicit reader: PReader[P]): Try[A] = u.unpickle(p)
-}
