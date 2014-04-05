@@ -8,6 +8,5 @@ js/project/project/*
 playjson/target/*
 playjson/project/target/*
 playjson/project/project/*
-.idea/*
-.idea_modules/*
-*.iml
+.idea/tasks.xml
+.idea/workspace.xml
