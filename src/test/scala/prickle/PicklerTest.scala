@@ -4,14 +4,9 @@ import utest._
 import scala.reflect.ClassTag
 import scala.util.Success
 
-//import Pickler._
-//import Unpickler._
-
-
 
 case class Person(name: String)
-case class PersonalDetails(person: Person, starsign: String, age: Int, isFunny: Boolean, height: Double,
-                           parent: Person, ref: AnObject.type, favoriteLawnmower: ModelNumber)
+case class PersonalDetails(person: Person, starsign: String, age: Int, isFunny: Boolean, height: Double, parent: Person, ref: AnObject.type, favoriteLawnmower: ModelNumber)
 case class ModelNumber(series: Char, model: Short, variant: Byte, barcode: Long, fuelConsumption: Float)
 case object AnObject
 
@@ -40,7 +35,9 @@ object PickleTests extends TestSuite{
     "caseclass"-{
 
       val expectedEncoding = PObject(Map(
+        "#id" -> PString("1"),
         "person" -> PObject(Map(
+          "#id" -> PString("2"),
           "name" -> PString("Ben")
         )),
         "starsign" -> PNull,
@@ -50,9 +47,11 @@ object PickleTests extends TestSuite{
         "ref" -> PObject(Map("#scalaObj" -> PString("prickle.AnObject"))),
         "favoriteLawnmower" -> PNull,
         "parent" -> PObject(Map(
+          "#id" -> PString("3"),
           "name" -> PString("Keith")
         )),
         "favoriteLawnmower" -> PObject(Map(
+          "#id" -> PString("4"),
           "series" -> PString("V"),
           "barcode" -> PObject(Map("l" -> PNumber(1442514.0), "m" -> PNumber(294.0), "h" -> PNumber(0.0))),
           "model" -> PNumber(2000.0),
@@ -68,7 +67,6 @@ object PickleTests extends TestSuite{
       "unpickling"-{
         val actual = Unpickle[PersonalDetails].from(expectedEncoding: PFormat)
 
-        println(s"actual: $actual")
         assert(Success(benDetails) == actual)
       }
       "toleratesextradata"-{
@@ -84,10 +82,12 @@ object PickleTests extends TestSuite{
     "compositepicklers"-{
 
       "apple"-{
-        val pickle: PFormat = PObject(Map("#cls" -> PString("prickle.Apple"), "#val" -> PObject(Map("wormCount" -> PNumber(2.0)))))
+        val pickle: PFormat = PObject(Map("#cls" -> PString("prickle.Apple"), "#val" -> PObject(Map(
+          "#id" -> PString("1"), "wormCount" -> PNumber(2.0)))))
 
         "pickle"-{
-           assert(Pickle(apple) == pickle)
+          val applePickle = Pickle(apple)
+          assert(applePickle == pickle)
            assert(Pickle(apple: EdiblePlant) == pickle)
         }
         "unpickle"-{
@@ -121,14 +121,16 @@ object PickleTests extends TestSuite{
 
       val pickle: PFormat = PArray(List(
         PArray(List(
-          PObject(Map("name" -> PString("Ben"))),
-          PObject(Map("#cls" -> PString("prickle.Apple"), "#val" -> PObject(Map("wormCount" -> PNumber(2.0))))))),
+          PObject(Map("#id" -> PString("1"), "name" -> PString("Ben"))),
+          PObject(Map("#cls" -> PString("prickle.Apple"), "#val" -> PObject(Map("#id" -> PString("2"), "wormCount" -> PNumber(2.0))))))),
       PArray(List(
-        PObject(Map("name" -> PString("Keith"))),
+        PObject(Map("#id" -> PString("3"), "name" -> PString("Keith"))),
         PObject(Map("#cls" -> PString("prickle.Carrot$"), "#val" -> PObject(Map("#scalaObj" -> PString("prickle.Carrot")))))))
       ))
 
-      "pickle"-{assert(Pickle(favoriteFoods) == pickle)}
+      "pickle"-{
+        val favoritePickles = Pickle(favoriteFoods)
+        assert(favoritePickles == pickle)}
 
       "unpickle"-{assert(Unpickle[Map[Person, EdiblePlant]].from(pickle) == Success(favoriteFoods))}
     }

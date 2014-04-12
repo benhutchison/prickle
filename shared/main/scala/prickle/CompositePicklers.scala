@@ -2,6 +2,7 @@ package prickle
 
 import scala.reflect.ClassTag
 import scala.util.{Success, Failure, Try}
+import collection.mutable
 
 /**
  * A `CompositePickler[A]` is used to pickle closed class hierarchies under a supertype `A`,
@@ -16,13 +17,15 @@ import scala.util.{Success, Failure, Try}
 case class CompositePickler[A <: AnyRef](picklers: Map[String, Pickler[_]] = Map.empty) extends Pickler[A] {
 
 
-  def pickle[P](obj: A)(implicit builder: PBuilder[P]): P = {
+  def pickle[P](obj: A, state: PickleState)(implicit config: PConfig[P]): P = {
     if (obj != null) {
       val name = obj.getClass.getName
-      val p = picklers.get(name).get.asInstanceOf[Pickler[A]]
-      builder.makeObject((CompositePickler.ClassKey, builder.makeString(name)), (CompositePickler.ValueKey, p.pickle(obj)))
+      val concretePickler = picklers.get(name).get.asInstanceOf[Pickler[A]]
+      config.makeObject(Seq(
+        (CompositePickler.classKey, config.makeString(name)),
+        (CompositePickler.valueKey, Pickle(obj, state)(concretePickler, config))))
     } else {
-      builder.makeNull()
+      config.makeNull
     }
   }
 
@@ -41,19 +44,18 @@ case class CompositeUnpickler[A <: AnyRef](unpicklers: Map[String, Unpickler[_]]
 
   import CompositePickler._
 
-
-  def unpickle[P](pickle: P)(implicit reader: PReader[P]): Try[A] = {
-    if (reader.isNull(pickle)) {
+  def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[A] = {
+    if (config.isNull(pickle)) {
       Success(null.asInstanceOf[A])
     } else {
       for {
-        className <-  reader.readObjectFieldStr(pickle, ClassKey)
+        className <-  config.readObjectFieldStr(pickle, classKey)
 
-        field <- reader.readObjectField(pickle, ValueKey)
+        field <- config.readObjectField(pickle, valueKey)
 
         result <- unpicklers.get(className) match {
           case Some(unpickler) =>
-            unpickler.asInstanceOf[Unpickler[A]].unpickle(field)
+            unpickler.asInstanceOf[Unpickler[A]].unpickle(field, state)
           case None =>
             Failure(new RuntimeException(s"No unpickler for '$className' in: ${unpicklers.keys.mkString(", ")}"))
         }
@@ -68,8 +70,8 @@ case class CompositeUnpickler[A <: AnyRef](unpicklers: Map[String, Unpickler[_]]
 
 object CompositePickler {
 
-  val ClassKey = "#cls"
-  val ValueKey = "#val"
+  def classKey(implicit config: PConfig[_]) = s"${config.prefix}cls"
+  def valueKey(implicit config: PConfig[_]) = s"${config.prefix}val"
 
   def apply[A <: AnyRef] = new PicklerPair[A]()
 

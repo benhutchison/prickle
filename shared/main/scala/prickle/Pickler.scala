@@ -1,13 +1,19 @@
 package prickle
 
 import scala.language.experimental.macros
+import scala.collection.LinearSeq
+import scala.collection.mutable
 
 
 /** Use this object to invoke Pickling from user code */
 object Pickle {
 
-  def apply[A, P](value: A)(implicit p: Pickler[A], builder: PBuilder[P]): P = p.pickle(value)
+  def apply[A, P](value: A, state: PickleState = PickleState())(implicit p: Pickler[A], config: PConfig[P]): P =
+    p.pickle(value, state)(config)
+
 }
+
+case class PickleState(refs: mutable.Map[Any, String] = mutable.Map.empty, var seq: Int = 0)
 
 /** You should not need to implement this for the supported use cases:
   * - Primitives and Strings
@@ -15,61 +21,70 @@ object Pickle {
   * - Maps, Sets and Seqs
   * - Class-hierarchies supported via composite picklers
   * */
-trait Pickler[A] {
+trait  Pickler[A] {
 
-  def pickle[P](obj: A)(implicit builder: PBuilder[P]): P
+  def pickle[P](obj: A, state: PickleState)(implicit config: PConfig[P]): P
 }
 
 /** Do not import this companion object into scope in user code.*/
 object Pickler extends MaterializePicklerFallback {
 
   implicit object BooleanPickler extends Pickler[Boolean] {
-    def pickle[P](x: Boolean)(implicit builder: PBuilder[P]): P = builder.makeBoolean(x)
+    def pickle[P](x: Boolean, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeBoolean(x)
   }
 
   implicit object CharPickler extends Pickler[Char] {
-    def pickle[P](x: Char)(implicit builder: PBuilder[P]): P = builder.makeString(x.toString)
+    def pickle[P](x: Char, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeString(x.toString)
   }
 
   implicit object BytePickler extends Pickler[Byte] {
-    def pickle[P](x: Byte)(implicit builder: PBuilder[P]): P = builder.makeNumber(x)
+    def pickle[P](x: Byte, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeNumber(x)
   }
 
   implicit object ShortPickler extends Pickler[Short] {
-    def pickle[P](x: Short)(implicit builder: PBuilder[P]): P = builder.makeNumber(x)
+    def pickle[P](x: Short, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeNumber(x)
   }
 
   implicit object IntPickler extends Pickler[Int] {
-    def pickle[P](x: Int)(implicit builder: PBuilder[P]): P = builder.makeNumber(x)
+    def pickle[P](x: Int, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeNumber(x)
   }
 
   implicit object LongPickler extends Pickler[Long] {
-    def pickle[P](x: Long)(implicit builder: PBuilder[P]): P = {
-      builder.makeObject(
-          ("l", builder.makeNumber(x.toInt & 0x3fffff)),
-          ("m", builder.makeNumber((x >> 22).toInt & 0x3fffff)),
-          ("h", builder.makeNumber((x >> 44).toInt)))
+    def pickle[P](x: Long, state: PickleState)(implicit config: PConfig[P]): P = {
+      config.makeObject(Seq(
+        ("l", config.makeNumber(x.toInt & 0x3fffff)),
+        ("m", config.makeNumber((x >> 22).toInt & 0x3fffff)),
+        ("h", config.makeNumber((x >> 44).toInt))))
     }
   }
 
   implicit object FloatPickler extends Pickler[Float] {
-    def pickle[P](x: Float)(implicit builder: PBuilder[P]): P = builder.makeNumber(x)
+    def pickle[P](x: Float, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeNumber(x)
   }
 
   implicit object DoublePickler extends Pickler[Double] {
-    def pickle[P](x: Double)(implicit builder: PBuilder[P]): P = builder.makeNumber(x)
+    def pickle[P](x: Double, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeNumber(x)
   }
 
   implicit object StringPickler extends Pickler[String] {
-    def pickle[P](x: String)(implicit builder: PBuilder[P]): P = builder.makeString(x)
+    def pickle[P](x: String, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeString(x)
   }
 
-  implicit def mapPickler[K, V](implicit kp: Pickler[K], vp: Pickler[V]) = new Pickler[Map[K, V]] {
-    def pickle[P](value: Map[K, V])(implicit builder: PBuilder[P]): P = {
-      builder.makeArray(value.map(kv => {
+  implicit def mapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[Map[K, V]] {
+    def pickle[P](value: Map[K, V], state: PickleState)(implicit config: PConfig[P]): P = {
+      val entries = value.map(kv => {
         val (k, v) = kv
-        builder.makeArray(kp.pickle(k), vp.pickle(v))
-      }).toSeq: _*)
+        config.makeArray(Pickle(k, state), Pickle(v, state))
+      })
+      config.makeArray(entries.toSeq: _*)
     }
   }
 

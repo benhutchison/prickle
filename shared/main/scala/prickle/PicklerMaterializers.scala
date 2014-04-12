@@ -9,6 +9,10 @@ object PicklerMaterializersImpl {
     import c.universe._
 
     val tpe = weakTypeOf[T]
+
+    if (!tpe.typeSymbol.isClass)
+      throw new RuntimeException("Enclosure: " + c.enclosingPosition.toString)
+
     val sym = tpe.typeSymbol.asClass
 
     if (!sym.isCaseClass) {
@@ -19,7 +23,7 @@ object PicklerMaterializersImpl {
 
     val pickleLogic = if (sym.isModuleClass) {
 
-      q"""builder.makeObject(("#scalaObj", builder.makeString(${sym.fullName})))"""
+      q"""config.makeObject("#scalaObj", config.makeString(${sym.fullName}))"""
 
     } else {
       val accessors = (tpe.declarations collect {
@@ -32,26 +36,48 @@ object PicklerMaterializersImpl {
         val fieldName = accessor.name
         val fieldString = fieldName.toString()
 
-        val fieldPickle = q"prickle.Pickle(value.$fieldName)"
+        val fieldPickle = q"prickle.Pickle(value.$fieldName, state)"
 
         val nullSafeFieldPickle =
           if (accessor.returnType.typeSymbol.asClass.isPrimitive)
             fieldPickle
           else
-            q"if (value.$fieldName == null) builder.makeNull() else $fieldPickle"
+            q"""if (value.$fieldName == null) {
+                if (config.nullProhibited) {
+                  throw new IllegalArgumentException("Null fields prohibited by PConfig, but encountered during pickling: " +
+                   ${sym.fullName} + "." + ${fieldName.toString})
+                } else
+                  config.makeNull()
+              } else
+                Pickle(value.$fieldName, state)"""
 
         q"""($fieldString, $nullSafeFieldPickle)"""
       }
 
-      q"""builder.makeObject(..$pickleFields)"""
+      q"""
+        def fieldPickles = Seq(..$pickleFields)
+
+        if (config.isCyclesSupported) {
+           state.refs.get(value).fold {
+            state.seq += 1
+            state.refs += value -> state.seq.toString
+            val idKey = config.prefix + "id"
+            config.makeObject((idKey, config.makeString(state.seq.toString)) +: fieldPickles)
+          }(
+            id => config.makeObject(config.prefix + "ref", config.makeString(id))
+          )
+        }
+        else {
+          config.makeObject(fieldPickles)
+        }"""
     }
     val name = newTermName(c.fresh("GenPickler"))
 
     val result = q"""
       implicit object $name extends prickle.Pickler[$tpe] {
         import prickle._
-        override def pickle[P](value: $tpe)(
-            implicit builder: PBuilder[P]): P = $pickleLogic
+        override def pickle[P](value: $tpe, state: PickleState)(
+            implicit config: PConfig[P]): P = $pickleLogic
       }
       $name
     """
@@ -74,7 +100,7 @@ object PicklerMaterializersImpl {
     val unpickleLogic = if (sym.isModuleClass) {
 
       q"""
-        val objName = reader.readString(reader.readObjectField(pickle, "#scalaObj").get).get
+        val objName = config.readString(config.readObjectField(pickle, "#scalaObj").get).get
         import scala.reflect.runtime.universe
         val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
         val module = runtimeMirror.staticModule(objName)
@@ -84,27 +110,39 @@ object PicklerMaterializersImpl {
 
     } else {
 
-      val accessors = (tpe.declarations collect {
-        case acc: MethodSymbol if acc.isCaseAccessor => acc
-      }).toList
+      val unpickleBody = {
+        val accessors = (tpe.declarations collect {
+          case acc: MethodSymbol if acc.isCaseAccessor => acc
+        }).toList
 
-      val unpickledFields = for {
-        accessor <- accessors
-      } yield {
-        val fieldName = accessor.name
-        val fieldTpe = accessor.returnType
+        val unpickledFields = for {
+          accessor <- accessors
+        } yield {
+          val fieldName = accessor.name
+          val fieldTpe = accessor.returnType
+          q"""
+              config.readObjectField(pickle, ${fieldName.toString}).flatMap(field =>
+                prickle.Unpickle[$fieldTpe].from(field)(config)).get
+          """
+        }
         q"""
-            reader.readObjectField(pickle, ${fieldName.toString}).flatMap(field =>
-              prickle.Unpickle[$fieldTpe].from(field)(reader)).get
+          val result = new $tpe(..$unpickledFields)
+          val tryId = config.readObjectField(pickle, config.prefix + "id").flatMap(field => config.readString(field))
+          tryId.foreach(id => config.onUnpickle(id, result, state))
+          Success(result)
         """
       }
-      q"""new $tpe(..$unpickledFields)"""
+      val unpickleRef = q"(p: P) => config.readString(p).flatMap(ref => Try(state(ref).asInstanceOf[$tpe]))"
+
+      q"""
+      config.readObjectField(pickle, config.prefix + "ref").transform({$unpickleRef}, _ => {$unpickleBody}).get
+      """
     }
 
 
     val nullLogic = if (sym.isPrimitive)
       q"""throw new RuntimeException("Cannot unpickle null into Primitive field '" +
-        ${tpe.typeSymbol.name.toString} + "'. Context: "  + reader.context(pickle))"""
+        ${tpe.typeSymbol.name.toString} + "'. Context: "  + config.context(pickle))"""
     else
       q"null"
 
@@ -114,9 +152,9 @@ object PicklerMaterializersImpl {
       implicit object $name extends prickle.Unpickler[$tpe] {
         import prickle._
         import scala.util.Try
-        override def unpickle[P](pickle: P)(
-          implicit reader: PReader[P]): Try[$tpe] = Try {
-            if (reader.isNull(pickle))
+        override def unpickle[P](pickle: P, state: collection.mutable.Map[String, Any])(
+          implicit config: PConfig[P]): Try[$tpe] = Try {
+            if (config.isNull(pickle))
               $nullLogic
             else
               $unpickleLogic
