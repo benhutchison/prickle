@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="SBT: com.lihaoyi.utest:utest_2.10:0.1.1-JS:test">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.lihaoyi.utest/utest_2.10/jars/utest_2.10-0.1.1-JS.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.lihaoyi.utest/utest_2.10/srcs/utest_2.10-0.1.1-JS-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
