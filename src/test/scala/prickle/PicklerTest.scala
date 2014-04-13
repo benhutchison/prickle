@@ -1,7 +1,6 @@
 package prickle
 
 import utest._
-import scala.reflect.ClassTag
 import scala.util.Success
 
 
@@ -134,5 +133,20 @@ object PickleTests extends TestSuite{
 
       "unpickle"-{assert(Unpickle[Map[Person, EdiblePlant]].from(pickle) == Success(favoriteFoods))}
     }
+    "cyclic"-{
+
+      val brotherDetails = PersonalDetails(Person("Oliver"), null, 37, false, 175.6667, parent, AnObject, lawnmowerModel)
+      val brothers = new SiblingDetails(benDetails, brotherDetails)
+
+      assert(brothers.s1.parent eq brothers.s2.parent)
+
+      val pickle: PFormat = Pickle(brothers)
+      val afterPickling = Unpickle[SiblingDetails].from(pickle).get
+
+      val p1 = afterPickling.s1.parent
+      val p2 = afterPickling.s2.parent
+      assert(p1 eq p2)
+    }
   }
 }
+case class SiblingDetails(s1: PersonalDetails, s2: PersonalDetails)

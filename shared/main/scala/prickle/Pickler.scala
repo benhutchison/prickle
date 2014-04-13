@@ -1,7 +1,6 @@
 package prickle
 
 import scala.language.experimental.macros
-import scala.collection.LinearSeq
 import scala.collection.mutable
 
 

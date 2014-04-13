@@ -11,7 +11,7 @@ object Unpickle {
 }
 case class UnpickledCurry[A](u: Unpickler[A]) {
 
-  def from[P](p: P)(implicit config: PConfig[P]): Try[A] = u.unpickle(p, mutable.Map.empty)
+  def from[P](p: P, state: mutable.Map[String, Any] = mutable.Map.empty)(implicit config: PConfig[P]): Try[A] = u.unpickle(p, state)
 }
 
 /** You should not need to implement this for the supported use cases:

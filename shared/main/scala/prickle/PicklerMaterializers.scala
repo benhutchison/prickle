@@ -122,7 +122,7 @@ object PicklerMaterializersImpl {
           val fieldTpe = accessor.returnType
           q"""
               config.readObjectField(pickle, ${fieldName.toString}).flatMap(field =>
-                prickle.Unpickle[$fieldTpe].from(field)(config)).get
+                prickle.Unpickle[$fieldTpe].from(field, state)(config)).get
           """
         }
         q"""
@@ -132,7 +132,7 @@ object PicklerMaterializersImpl {
           Success(result)
         """
       }
-      val unpickleRef = q"(p: P) => config.readString(p).flatMap(ref => Try(state(ref).asInstanceOf[$tpe]))"
+      val unpickleRef = q"""(p: P) => config.readString(p).flatMap(ref => Try{state(ref).asInstanceOf[$tpe]})"""
 
       q"""
       config.readObjectField(pickle, config.prefix + "ref").transform({$unpickleRef}, _ => {$unpickleBody}).get
