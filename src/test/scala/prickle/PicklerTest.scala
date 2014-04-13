@@ -147,6 +147,8 @@ object PickleTests extends TestSuite{
       val p2 = afterPickling.s2.parent
       assert(p1 eq p2)
     }
+    //Failing: could not find implicit value for parameter p: prickle.Pickler[(prickle.Person, prickle.Person)]
+    //"generic"-{Pickle((ben, parent))}
   }
 }
 case class SiblingDetails(s1: PersonalDetails, s2: PersonalDetails)
