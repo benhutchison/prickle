@@ -39,7 +39,7 @@ object PicklerMaterializersImpl {
         val fieldPickle = q"prickle.Pickle(value.$fieldName, state)"
 
         val nullSafeFieldPickle =
-          if (accessor.returnType.typeSymbol.asClass.isPrimitive)
+          if (accessor.typeSignatureIn(tpe).typeSymbol.asClass.isPrimitive)
             fieldPickle
           else
             q"""if (value.$fieldName == null) {
