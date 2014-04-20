@@ -19,7 +19,7 @@ scalaJSSettings
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.10.3",
   "org.scalamacros" % "quasiquotes_2.10.3" % "2.0.0-M3",
-  "com.lihaoyi.utest" % "utest_2.10" % "0.1.1-JS" % "test"
+  "com.lihaoyi" % "utest_2.10" % "0.1.2-JS" % "test"
 )
 
 (loadedTestFrameworks in Test) := {

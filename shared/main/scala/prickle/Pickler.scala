@@ -10,6 +10,9 @@ object Pickle {
   def apply[A, P](value: A, state: PickleState = PickleState())(implicit p: Pickler[A], config: PConfig[P]): P =
     p.pickle(value, state)(config)
 
+  def withConfig[A, P](value: A, state: PickleState = PickleState(), config: PConfig[P])(implicit p: Pickler[A]): P =
+    p.pickle(value, state)(config)
+
 }
 
 case class PickleState(refs: mutable.Map[Any, String] = mutable.Map.empty, var seq: Int = 0)

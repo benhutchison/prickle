@@ -17,7 +17,7 @@ unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "sc
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.10.3",
   "org.scalamacros" % "quasiquotes_2.10.3" % "2.0.0-M3",
-  "com.lihaoyi.utest" % "utest_2.10" % "0.1.1" % "test"
+  "com.lihaoyi" % "utest_2.10" % "0.1.2" % "test"
 )
 
 addCompilerPlugin("org.scalamacros" % "paradise_2.10.3" % "2.0.0-M3")

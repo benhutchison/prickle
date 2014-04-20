@@ -3,37 +3,30 @@ package prickle
 import scala.util.Try
 import collection.mutable
 
-object PConfig extends DefaultPickleFormat
+object PConfig extends DefaultPickleFormat {
+
+//  object AcyclicConfig extends AcyclicPConfig[PFormat] with HashCharPrefix[PFormat]
+//    with SimplePBuilder with SimplePReader
+}
 
 trait PConfig[P] extends PReader[P] with PBuilder[P] {
 
   def prefix: String
 
-  def nullProhibited: Boolean
-
   def isCyclesSupported: Boolean
-
-  def onUnpickle(id: String, value: Any, state: mutable.Map[String, Any])
 
 }
 trait HashCharPrefix[P] extends PConfig[P] {
 
   def prefix = "#"
 }
-trait NullPermittedConfig[P] extends PConfig[P] {
-
-  def nullProhibited = false
-}
-
 trait CyclicPConfig[P] extends PConfig[P] {
-
   def isCyclesSupported = true
-
-  def onUnpickle(id: String, value: Any, state: mutable.Map[String, Any]) = {
-    state += (id -> value)
-  }
-
 }
+trait AcyclicPConfig[P] extends PConfig[P] {
+  def isCyclesSupported = false
+}
+
 
 
 trait PBuilder[P] {
@@ -46,6 +39,7 @@ trait PBuilder[P] {
   def makeObject(fields: Seq[(String, P)]): P
 
   def makeObject(k: String, v: P): P = makeObject(Seq((k, v)))
+  def makeObjectFrom(fields: (String, P)*): P = makeObject(fields)
 }
 
 trait PReader[P] {

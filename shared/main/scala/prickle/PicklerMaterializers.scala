@@ -4,6 +4,7 @@ import scala.language.experimental.macros
 
 import scala.reflect.macros.Context
 
+
 object PicklerMaterializersImpl {
   def materializePickler[T: c.WeakTypeTag](c: Context): c.Expr[Pickler[T]] = {
     import c.universe._
@@ -36,20 +37,16 @@ object PicklerMaterializersImpl {
         val fieldName = accessor.name
         val fieldString = fieldName.toString()
 
-        val fieldPickle = q"prickle.Pickle(value.$fieldName, state)"
+        val fieldPickle = q"prickle.Pickle.withConfig(value.$fieldName, state, config)"
 
         val nullSafeFieldPickle =
           if (accessor.typeSignatureIn(tpe).typeSymbol.asClass.isPrimitive)
             fieldPickle
           else
             q"""if (value.$fieldName == null) {
-                if (config.nullProhibited) {
-                  throw new IllegalArgumentException("Null fields prohibited by PConfig, but encountered during pickling: " +
-                   ${sym.fullName} + "." + ${fieldName.toString})
-                } else
-                  config.makeNull()
-              } else
-                Pickle(value.$fieldName, state)"""
+              config.makeNull()
+            } else
+              prickle.Pickle.withConfig(value.$fieldName, state, config)"""
 
         q"""($fieldString, $nullSafeFieldPickle)"""
       }
@@ -108,6 +105,8 @@ object PicklerMaterializersImpl {
         obj.instance.asInstanceOf[$tpe]
       """
 
+      //Ident(newTermName(sym.fullName))
+
     } else {
 
       val unpickleBody = {
@@ -119,7 +118,7 @@ object PicklerMaterializersImpl {
           accessor <- accessors
         } yield {
           val fieldName = accessor.name
-          val fieldTpe = accessor.returnType
+          val fieldTpe = accessor.typeSignatureIn(tpe)
           q"""
               config.readObjectField(pickle, ${fieldName.toString}).flatMap(field =>
                 prickle.Unpickle[$fieldTpe].from(field, state)(config)).get
@@ -127,9 +126,12 @@ object PicklerMaterializersImpl {
         }
         q"""
           val result = new $tpe(..$unpickledFields)
-          val tryId = config.readObjectField(pickle, config.prefix + "id").flatMap(field => config.readString(field))
-          tryId.foreach(id => config.onUnpickle(id, result, state))
-          Success(result)
+          if (config.isCyclesSupported) {
+            config.readObjectField(pickle, config.prefix + "id").flatMap(
+              field => config.readString(field)).foreach(
+              id =>  state += (id -> result))
+          }
+          scala.util.Success(result)
         """
       }
       val unpickleRef = q"""(p: P) => config.readString(p).flatMap(ref => Try{state(ref).asInstanceOf[$tpe]})"""

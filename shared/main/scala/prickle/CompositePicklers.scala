@@ -55,7 +55,7 @@ case class CompositeUnpickler[A <: AnyRef](unpicklers: Map[String, Unpickler[_]]
 
         result <- unpicklers.get(className) match {
           case Some(unpickler) =>
-            unpickler.asInstanceOf[Unpickler[A]].unpickle(field, state)
+            unpickler.asInstanceOf[Unpickler[A]].unpickle(field, state)(config)
           case None =>
             Failure(new RuntimeException(s"No unpickler for '$className' in: ${unpicklers.keys.mkString(", ")}"))
         }
