@@ -14,6 +14,8 @@ object PlayTestData extends TestData(PConfig.DefaultConfig) {
     case JsObject(fields) => JsObject(field +: fields)
     case _ => pickle
   }
+
+  def areEqual(p1: JsValue, p2: JsValue) = p1 == p2
 }
 
 object PlayPickleTest extends PickleTests[JsValue](

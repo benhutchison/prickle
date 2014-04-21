@@ -1,6 +1,7 @@
 package prickle
 
 import scala.scalajs.js
+import scala.scalajs.js.JSON
 
 object JsTestData extends TestData(PConfig.DefaultConfig) {
 
@@ -23,6 +24,17 @@ object JsTestData extends TestData(PConfig.DefaultConfig) {
       y
     }
     case _ => pickle
+  }
+
+  def areEqual(p1: js.Any, p2: js.Any): Boolean = (p1, p2) match {
+    case (p1: js.Object, p2: js.Object) => {
+      for (field <- js.Dictionary.propertiesOf(p1))
+        if (!areEqual(p1.asInstanceOf[js.Dictionary[js.Any]](field),
+          p2.asInstanceOf[js.Dictionary[js.Any]](field)))
+          return false
+      true
+    }
+    case _ => p1 == p2
   }
 
   def copy(obj: js.Object): js.Dictionary[js.Any] = {

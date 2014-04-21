@@ -17,7 +17,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
       "caseclass"-{
         "encoding"-{
           val actual = Pickle(benDetails)
-          assert(expectedBenDetailsPickle == actual)
+          assert(areEqual(expectedBenDetailsPickle, actual))
         }
         "unpickling"-{
           val actual = Unpickle[PersonalDetails].from(expectedBenDetailsPickle)
@@ -40,9 +40,9 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
         "apple"-{
           "pickle"-{
             val applePickle = Pickle(apple)
-            assert(expectedApplePickle == applePickle)
+            assert(areEqual(expectedApplePickle, applePickle))
             val plantPickle = Pickle(apple: EdiblePlant)
-            assert(plantPickle == applePickle)
+            assert(areEqual(plantPickle, applePickle))
           }
           "unpickle"-{
             val unpickleFruit = Unpickle[Fruit].from(expectedApplePickle).get
@@ -54,7 +54,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
         "carrot"-{
           "pickle"-{
             val carrotPickle = Pickle(carrot)
-            assert(carrotPickle == expectedCarrotPickle)
+            assert(areEqual(carrotPickle, expectedCarrotPickle))
           }
           "unpickle"-{
             val unpickle = Unpickle[EdiblePlant].from(expectedCarrotPickle).get
@@ -78,7 +78,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
 
         "pickle"-{
           val favoritePickles = Pickle(favoriteFoods)
-          assert(favoritePickles == expectedMapPickle)}
+          assert(areEqual(favoritePickles, expectedMapPickle))}
 
         "unpickle"-{
           val unpickle = Unpickle[Map[Person, EdiblePlant]].from(expectedMapPickle).get
@@ -118,7 +118,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
           assert(afterPickling._2 == brotherDetails)
         }
 
-        "no00id00tags00added00to00pickle"-{assert(pickle == stripIdTags(pickle))}
+        "no00id00tags00added00to00pickle"-{assert(areEqual(pickle, stripIdTags(pickle)))}
 
         "no00state00during00pickle"-{assert(pickleState.refs.isEmpty)}
         "no00state00during00unpickle"-{assert(unpickleState.isEmpty)}

@@ -95,20 +95,8 @@ object PicklerMaterializersImpl {
     }
 
     val unpickleLogic = if (sym.isModuleClass) {
-
-      q"""
-        val objName = config.readString(config.readObjectField(pickle, "#scalaObj").get).get
-        import scala.reflect.runtime.universe
-        val runtimeMirror = universe.runtimeMirror(getClass.getClassLoader)
-        val module = runtimeMirror.staticModule(objName)
-        val obj = runtimeMirror.reflectModule(module)
-        obj.instance.asInstanceOf[$tpe]
-      """
-
-      //Ident(newTermName(sym.fullName))
-
+      c.parse(sym.fullName)
     } else {
-
       val unpickleBody = {
         val accessors = (tpe.declarations collect {
           case acc: MethodSymbol if acc.isCaseAccessor => acc

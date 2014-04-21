@@ -59,5 +59,19 @@ trait JsPReader extends PReader[js.Any] {
 
   /** Should provide some diagnostic string about the pickle 'x', eg its content.
     * Used to build error messages. */
-  def context(x: js.Any): String = x.toString()
+  def context(x: js.Any): String = x match {
+    case null => "null"
+    case x: js.Undefined => "Undefined"
+    case x: js.Array[Any] => x.mkString("js.Array(",",", ")")
+    case x: js.Boolean => x.toString
+    case x: js.String => x
+    case x: js.Number => x.toString
+    case x: js.Object => {
+      val y = x.asInstanceOf[js.Dictionary[js.Any]]
+      val f = js.Any.fromFunction1((k: js.String) => s"$k: ${context(y(k))}".asInstanceOf[js.String])
+      val ps = js.Dictionary.propertiesOf(x).map(f)
+      ps.mkString("js.Object(", ",", ")")
+    }
+    case x: Any => x.toString
+  }
 }

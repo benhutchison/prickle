@@ -80,6 +80,8 @@ abstract class TestData[P](builder: PBuilder[P]) {
 
   def addField(pickle: P, field: (String, P)): P
 
+  def areEqual(p1: P, p2: P): Boolean
+
   val brotherDetails = PersonalDetails(Person("Oliver"), null, 37, false, 175.6667, parent, AnObject, lawnmowerModel)
   val brothers = (benDetails, brotherDetails)
 }
