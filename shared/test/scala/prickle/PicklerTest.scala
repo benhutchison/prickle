@@ -11,7 +11,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
 
 
   val tests = TestSuite {
-    "with00cyclic00config"-{
+    "with cyclic config"-{
       implicit val cyclicConfig = configFactory(true)
 
       "caseclass"-{
@@ -84,7 +84,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
           val unpickle = Unpickle[Map[Person, EdiblePlant]].from(expectedMapPickle).get
           assert(unpickle == favoriteFoods)}
       }
-      "cycle00handling"-{
+      "cycle handling"-{
         assert(brothers._1.parent eq brothers._2.parent)
 
         val pickle = Pickle(brothers)
@@ -95,10 +95,10 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
         assert(p1 eq p2)
       }
     }
-    "with00acyclic00config"-{
+    "with acyclic config"-{
       implicit val acyclicConfig: PConfig[P] = configFactory(false)
 
-      "over00cyclic00structure"-{
+      "over cyclic structure"-{
 
         assert(brothers._1.parent eq brothers._2.parent)
 
@@ -111,17 +111,17 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
         val p1 = afterPickling._1.parent
         val p2 = afterPickling._2.parent
 
-        "shared00structures00are00duplicated"-{assert(!(p1 eq p2))}
+        "shared structures are duplicated"-{assert(!(p1 eq p2))}
 
-        "data00is00preserved"-{
+        "data is preserved"-{
           assert(afterPickling._1 == benDetails)
           assert(afterPickling._2 == brotherDetails)
         }
 
-        "no00id00tags00added00to00pickle"-{assert(areEqual(pickle, stripIdTags(pickle)))}
+        "no id tags added to pickle"-{assert(areEqual(pickle, stripIdTags(pickle)))}
 
-        "no00state00during00pickle"-{assert(pickleState.refs.isEmpty)}
-        "no00state00during00unpickle"-{assert(unpickleState.isEmpty)}
+        "no state during pickle"-{assert(pickleState.refs.isEmpty)}
+        "no state during unpickle"-{assert(unpickleState.isEmpty)}
       }
     }
   }

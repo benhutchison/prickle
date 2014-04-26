@@ -1,10 +1,10 @@
-import sbt._
+  import sbt._
 import sbt.Keys._
 import scala.scalajs.sbtplugin.ScalaJSPlugin.ScalaJSKeys._
 
 name := "Prickle"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.0"
 
 version := "0.1-JS"
 
@@ -17,20 +17,17 @@ autoCompilerPlugins := true
 scalaJSSettings
 
 libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-reflect" % "2.10.3",
-  "org.scalamacros" % "quasiquotes_2.10.3" % "2.0.0-M3",
-  "com.lihaoyi" % "utest_2.10" % "0.1.2-JS" % "test"
+  "org.scala-lang" % "scala-reflect" % "2.11.0",
+  "com.lihaoyi" % "utest_2.11" % "0.1.3-JS" % "test"
 )
 
 (loadedTestFrameworks in Test) := {
+  import scala.scalajs.sbtplugin.ScalaJSPlugin.ScalaJSKeys._
   (loadedTestFrameworks in Test).value.updated(
-    sbt.TestFramework(classOf[utest.runner.JsFramework].getName),
-    new utest.runner.JsFramework(environment = (scalaJSEnvironment in Test).value)
+    sbt.TestFramework(classOf[utest.jsrunner.JsFramework].getName),
+    new utest.jsrunner.JsFramework(environment = (scalaJSEnvironment in Test).value)
   )
 }
-
-addCompilerPlugin("org.scalamacros" % "paradise_2.10.3" % "2.0.0-M3")
-
 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 

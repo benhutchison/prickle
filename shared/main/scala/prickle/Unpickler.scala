@@ -101,6 +101,6 @@ object Unpickler extends MaterializeUnpicklerFallback {
 trait MaterializeUnpicklerFallback {
 
   implicit def materializeUnpickler[T]: Unpickler[T] =
-  macro PicklerMaterializersImpl.materializeUnpickler[T]
+    macro PicklerMaterializersImpl.materializeUnpickler[T]
 }
 

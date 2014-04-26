@@ -1,6 +1,6 @@
 name := "Prickle"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.0"
 
 version := "0.1"
 
@@ -15,12 +15,9 @@ unmanagedSourceDirectories in Compile <+= baseDirectory(_ / "shared" / "main" / 
 unmanagedSourceDirectories in Test <+= baseDirectory(_ / "shared" / "test" / "scala")
 
 libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-reflect" % "2.10.3",
-  "org.scalamacros" % "quasiquotes_2.10.3" % "2.0.0-M3",
-  "com.lihaoyi" % "utest_2.10" % "0.1.2" % "test"
+  "org.scala-lang" % "scala-reflect" % "2.11.0",
+  "com.lihaoyi" % "utest_2.11" % "0.1.3" % "test"
 )
-
-addCompilerPlugin("org.scalamacros" % "paradise_2.10.3" % "2.0.0-M3")
 
 testFrameworks += new TestFramework("utest.runner.JvmFramework")
 
