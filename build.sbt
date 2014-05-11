@@ -2,6 +2,8 @@ name := "Prickle"
 
 scalaVersion := "2.11.0"
 
+organization := "com.github.benhutchison"
+
 version := "0.1"
 
 lazy val root = project.in(file("."))

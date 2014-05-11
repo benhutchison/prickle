@@ -69,6 +69,7 @@ abstract class TestData[P](builder: PBuilder[P]) {
       makeObjectFrom("#cls" -> carrotCls, "#val" -> makeObjectFrom("#scalaObj" -> carrotObj)))
   )
 
+
   def expectedBenDetailsAcyclicPickle: P = stripIdTags(expectedBenDetailsPickle)
 
   def stripIdTags(pickle: P): P

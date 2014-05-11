@@ -2,11 +2,13 @@
 import sbt.Keys._
 import scala.scalajs.sbtplugin.ScalaJSPlugin.ScalaJSKeys._
 
-name := "Prickle"
+name := "Prickle-js"
+
+organization := "com.github.benhutchison"
 
 scalaVersion := "2.11.0"
 
-version := "0.1-JS"
+version := "0.1"
 
 unmanagedSourceDirectories in Compile <+= baseDirectory(_ / ".." / "shared" / "main" / "scala")
 

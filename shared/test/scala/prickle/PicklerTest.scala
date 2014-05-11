@@ -11,80 +11,109 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
 
 
   val tests = TestSuite {
-    "with cyclic config"-{
-      implicit val cyclicConfig = configFactory(true)
+    "with cyclic config"- {
+      implicit val config = configFactory(true)
+      import config._
 
-      "caseclass"-{
-        "encoding"-{
+      "caseclass" - {
+        "encoding" - {
           val actual = Pickle(benDetails)
           assert(areEqual(expectedBenDetailsPickle, actual))
         }
-        "unpickling"-{
+        "unpickling" - {
           val actual = Unpickle[PersonalDetails].from(expectedBenDetailsPickle)
           assert(Success(benDetails) == actual)
         }
-        "toleratesextradata"-{
-          val extra = addField(expectedBenDetailsPickle, "foo" -> cyclicConfig.makeString("bar"))
+        "toleratesextradata" - {
+          val extra = addField(expectedBenDetailsPickle, "foo" -> config.makeString("bar"))
 
           val actual = Unpickle[PersonalDetails].from(extra).get
           assert(benDetails == actual)
         }
       }
-      "generic"-{
+      "generic" - {
         val initial: (Person, Person) = (ben, parent)
         val p = Pickle(initial)
         val unpickled = Unpickle[(Person, Person)].from(p).get
         assert(initial == unpickled)
       }
-      "compositepicklers"-{
-        "apple"-{
-          "pickle"-{
+      "compositepicklers" - {
+        "apple" - {
+          "pickle" - {
             val applePickle = Pickle(apple)
             assert(areEqual(expectedApplePickle, applePickle))
             val plantPickle = Pickle(apple: EdiblePlant)
             assert(areEqual(plantPickle, applePickle))
           }
-          "unpickle"-{
+          "unpickle" - {
             val unpickleFruit = Unpickle[Fruit].from(expectedApplePickle).get
             assert(apple == unpickleFruit)
             val unpicklePlant = Unpickle[EdiblePlant].from(expectedApplePickle).get
             assert(apple == unpicklePlant)
           }
         }
-        "carrot"-{
-          "pickle"-{
+        "carrot" - {
+          "pickle" - {
             val carrotPickle = Pickle(carrot)
             assert(areEqual(carrotPickle, expectedCarrotPickle))
           }
-          "unpickle"-{
+          "unpickle" - {
             val unpickle = Unpickle[EdiblePlant].from(expectedCarrotPickle).get
             assert(carrot == unpickle)
           }
         }
-        "null"-{
-          val pickle: P = cyclicConfig.makeNull
+        "null" - {
+          val pickle: P = config.makeNull
 
-          "pickle"-{
+          "pickle" - {
             assert(Pickle(null: EdiblePlant) == pickle)
           }
-          "unpickle"-{
+          "unpickle" - {
             val unpickle = Unpickle[EdiblePlant].from(pickle).get
             assert(null == unpickle)
           }
         }
       }
-      "maps"-{
+      "maps" - {
         val favoriteFoods = Map(ben -> apple, parent -> carrot)
 
-        "pickle"-{
+        "pickle" - {
           val favoritePickles = Pickle(favoriteFoods)
-          assert(areEqual(favoritePickles, expectedMapPickle))}
+          assert(areEqual(favoritePickles, expectedMapPickle))
+        }
 
-        "unpickle"-{
+        "unpickle" - {
           val unpickle = Unpickle[Map[Person, EdiblePlant]].from(expectedMapPickle).get
-          assert(unpickle == favoriteFoods)}
+          assert(unpickle == favoriteFoods)
+        }
       }
-      "cycle handling"-{
+      "seqs" - {
+        val seq = Seq("One", "Two")
+        val expectedPickle = makeArray(makeString("One"), makeString("Two"))
+
+        "pickle" - {
+          val p = Pickle(seq)
+          assert(areEqual(p, expectedPickle))
+        }
+        "unpickle" - {
+          val unpickle = Unpickle[Seq[String]].from(expectedPickle).get
+          assert(unpickle == seq)
+        }
+      }
+      "sets" - {
+        val set = Set("One", "Two")
+        val expectedPickle = makeArray(makeString("One"), makeString("Two"))
+
+        "pickle" - {
+          val p = Pickle(set)
+          assert(areEqual(p, expectedPickle))
+        }
+        "unpickle" - {
+          val unpickle = Unpickle[Set[String]].from(expectedPickle).get
+          assert(unpickle == set)
+        }
+      }
+      "cycle handling" - {
         assert(brothers._1.parent eq brothers._2.parent)
 
         val pickle = Pickle(brothers)
@@ -94,7 +123,10 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
         val p2 = afterPickling._2.parent
         assert(p1 eq p2)
       }
-    }
+      "case_class_with_doubly_nested_parametric_field"-{
+        Unpickle[DoublyNested].from(Pickle(DoublyNested(None)))
+      }
+  }
     "with acyclic config"-{
       implicit val acyclicConfig: PConfig[P] = configFactory(false)
 
@@ -126,3 +158,4 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
     }
   }
 }
+case class DoublyNested(field:  Option[(Fruit, Int)])

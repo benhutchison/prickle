@@ -53,20 +53,8 @@ object PicklerMaterializersImpl {
 
       q"""
         def fieldPickles = Seq(..$pickleFields)
-
-        if (config.isCyclesSupported) {
-           state.refs.get(value).fold {
-            state.seq += 1
-            state.refs += value -> state.seq.toString
-            val idKey = config.prefix + "id"
-            config.makeObject((idKey, config.makeString(state.seq.toString)) +: fieldPickles)
-          }(
-            id => config.makeObject(config.prefix + "ref", config.makeString(id))
-          )
-        }
-        else {
-          config.makeObject(fieldPickles)
-        }"""
+        Pickler.resolvingSharing[P](value, fieldPickles, state, config)
+      """
     }
     val name = newTermName(c.fresh("GenPickler"))
 
@@ -114,11 +102,7 @@ object PicklerMaterializersImpl {
         }
         q"""
           val result = new $tpe(..$unpickledFields)
-          if (config.isCyclesSupported) {
-            config.readObjectField(pickle, config.prefix + "id").flatMap(
-              field => config.readString(field)).foreach(
-              id =>  state += (id -> result))
-          }
+          Unpickler.resolvingSharing[P](result, pickle, state, config)
           scala.util.Success(result)
         """
       }

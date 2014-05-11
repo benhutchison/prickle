@@ -28,6 +28,13 @@ trait Unpickler[A] {
 /** Do not import this companion object into scope in user code.*/
 object Unpickler extends MaterializeUnpicklerFallback {
 
+  private[prickle] def resolvingSharing[P](value: Any, pickle: P, state: mutable.Map[String, Any], config: PConfig[P]): Unit = {
+    if (config.isCyclesSupported)
+      config.readObjectField(pickle, config.prefix + "id").flatMap(
+        field => config.readString(field)).foreach(
+          id => state += (id -> value))
+  }
+
   implicit object BooleanUnpickler extends Unpickler[Boolean] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]) = config.readBoolean(pickle)
   }
@@ -93,6 +100,37 @@ object Unpickler extends MaterializeUnpicklerFallback {
         }
       } yield
         kvs.foldLeft(Map.empty[K, V])((m, kv) => m.updated(kv._1, kv._2))
+    }
+  }
+
+  //TODO support shared objects for all of these cases
+  implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Seq[T]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Seq[T]] = {
+      import config._
+      readArrayLength(pickle).flatMap(len =>
+        Try((0 until len).map(index => unpickler.unpickle(readArrayElem(pickle, index).get, state).get))
+      )
+    }
+  }
+
+  implicit def setUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Set[T]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Set[T]] = {
+      import config._
+      readArrayLength(pickle).flatMap(len =>
+        Try((0 until len).map(index => unpickler.unpickle(readArrayElem(pickle, index).get, state).get).toSet)
+      )
+    }
+  }
+
+  implicit def optionUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[Option[T]] = new Unpickler[Option[T]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Option[T]] = {
+      import config._
+      readArrayLength(pickle).flatMap(len =>
+        if (len == 1)
+          readArrayElem(pickle, 0).flatMap(p => unpickler.unpickle(p, state).map(t => Some(t)))
+        else
+          Try(None)
+      )
     }
   }
 

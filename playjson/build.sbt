@@ -1,6 +1,10 @@
-name := "prickle play-json"
+name := "Prickle-playjson"
 
 scalaVersion := "2.11.0"
+
+organization := "com.github.benhutchison"
+
+version := "0.1"
 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 

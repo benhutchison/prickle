@@ -2,12 +2,16 @@ package prickle
 
 import scala.language.experimental.macros
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 
 /** Use this object to invoke Pickling from user code */
 object Pickle {
 
   def apply[A, P](value: A, state: PickleState = PickleState())(implicit p: Pickler[A], config: PConfig[P]): P =
+    p.pickle(value, state)(config)
+
+  def withPickler[A, P](value: A, state: PickleState = PickleState(), p: Pickler[A])(implicit config: PConfig[P]): P =
     p.pickle(value, state)(config)
 
   def withConfig[A, P](value: A, state: PickleState = PickleState(), config: PConfig[P])(implicit p: Pickler[A]): P =
@@ -30,6 +34,22 @@ trait  Pickler[A] {
 
 /** Do not import this companion object into scope in user code.*/
 object Pickler extends MaterializePicklerFallback {
+
+  private[prickle] def resolvingSharing[P](value: Any, fieldPickles: Seq[(String, P)], state: PickleState, config: PConfig[P]): P = {
+    if (config.isCyclesSupported) {
+      state.refs.get(value).fold {
+        state.seq += 1
+        state.refs += value -> state.seq.toString
+        val idKey = config.prefix + "id"
+        config.makeObject((idKey, config.makeString(state.seq.toString)) +: fieldPickles)
+      }(
+          id => config.makeObject(config.prefix + "ref", config.makeString(id))
+        )
+    }
+    else {
+      config.makeObject(fieldPickles)
+    }
+  }
 
   implicit object BooleanPickler extends Pickler[Boolean] {
     def pickle[P](x: Boolean, state: PickleState)(implicit config: PConfig[P]): P =
@@ -89,6 +109,25 @@ object Pickler extends MaterializePicklerFallback {
       config.makeArray(entries.toSeq: _*)
     }
   }
+
+  implicit def seqPickler[T](implicit pickler: Pickler[T]) = new Pickler[Seq[T]] {
+    def pickle[P](value: Seq[T], state: PickleState)(implicit config: PConfig[P]): P = {
+      config.makeArray(value.map(e => Pickle(e, state)): _*)
+    }
+  }
+
+  implicit def setPickler[T](implicit pickler: Pickler[T]) = new Pickler[Set[T]] {
+    def pickle[P](value: Set[T], state: PickleState)(implicit config: PConfig[P]): P = {
+      config.makeArray(value.map(e => Pickle(e, state)).toSeq: _*)
+    }
+  }
+
+  implicit def optionPickler[T](implicit pickler: Pickler[T]): Pickler[Option[T]] = new Pickler[Option[T]] {
+    def pickle[P](value: Option[T], state: PickleState)(implicit config: PConfig[P]): P = {
+      config.makeArray(value.map(e => Pickle(e, state)).toSeq: _*)
+    }
+  }
+
 
   implicit def toPickler[A <: AnyRef](implicit pair: PicklerPair[A]): Pickler[A] = pair.pickler
 }
