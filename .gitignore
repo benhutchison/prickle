@@ -5,8 +5,11 @@ project/project/*
 js/target/*
 js/project/target/*
 js/project/project/*
-playjson/target/*
-playjson/project/target/*
-playjson/project/project/*
-.idea/tasks.xml
-.idea/workspace.xml
+jvm/target/*
+jvm/project/target/*
+jvm/project/project/*
+example/target/*
+example/project/target/*
+example/project/project/*
+.idea/*
+.idea_modules/*
