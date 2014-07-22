@@ -3,6 +3,7 @@ package prickle
 import scala.util.{Success, Failure, Try}
 import collection.mutable
 import scala.language.experimental.macros
+import microjson._
 
 /** Use this object to invoke Unpickling from user code */
 object Unpickle {
@@ -11,7 +12,16 @@ object Unpickle {
 }
 case class UnpickledCurry[A](u: Unpickler[A]) {
 
-  def from[P](p: P, state: mutable.Map[String, Any] = mutable.Map.empty)(implicit config: PConfig[P]): Try[A] = u.unpickle(p, state)
+  def from[P](p: P, state: mutable.Map[String, Any] = mutable.Map.empty)
+             (implicit config: PConfig[P]): Try[A] = {
+    u.unpickle(p, state)
+  }
+
+  def fromString(json: String, state: mutable.Map[String, Any] = mutable.Map.empty)
+             (implicit config: PConfig[JsValue]): Try[A] = {
+    Try(Json.read(json)).flatMap(jsValue =>
+      u.unpickle(jsValue, state)(config))
+  }
 }
 
 /** You should not need to implement this for the supported use cases:
@@ -28,7 +38,7 @@ trait Unpickler[A] {
 /** Do not import this companion object into scope in user code.*/
 object Unpickler extends MaterializeUnpicklerFallback {
 
-  private[prickle] def resolvingSharing[P](value: Any, pickle: P, state: mutable.Map[String, Any], config: PConfig[P]): Unit = {
+  def resolvingSharing[P](value: Any, pickle: P, state: mutable.Map[String, Any], config: PConfig[P]): Unit = {
     if (config.isCyclesSupported)
       config.readObjectField(pickle, config.prefix + "id").flatMap(
         field => config.readString(field)).foreach(

@@ -5,27 +5,31 @@ import scala.util.Success
 
 import scala.collection.mutable
 
+import microjson._
 
-abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: TestData[P]) extends TestSuite {
+
+object PickleTests extends TestSuite {
+  val testData = new TestData()
   import testData._
 
-
-  val tests = TestSuite {
+  def tests = TestSuite {
     "with cyclic config"- {
-      implicit val config = configFactory(true)
+      implicit val config = JsConfig()
       import config._
 
       "caseclass" - {
         "encoding" - {
           val actual = Pickle(benDetails)
-          assert(areEqual(expectedBenDetailsPickle, actual))
+          val expected = expectedBenDetailsPickle
+          assert(expected == actual)
         }
         "unpickling" - {
           val actual = Unpickle[PersonalDetails].from(expectedBenDetailsPickle)
           assert(Success(benDetails) == actual)
         }
         "toleratesextradata" - {
-          val extra = addField(expectedBenDetailsPickle, "foo" -> config.makeString("bar"))
+          val extra: JsValue = new JsObject(
+            expectedBenDetailsPickle.asInstanceOf[JsObject].value + ("foo" -> config.makeString("bar")))
 
           val actual = Unpickle[PersonalDetails].from(extra).get
           assert(benDetails == actual)
@@ -41,9 +45,9 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
         "apple" - {
           "pickle" - {
             val applePickle = Pickle(apple)
-            assert(areEqual(expectedApplePickle, applePickle))
+            assert(expectedApplePickle == applePickle)
             val plantPickle = Pickle(apple: EdiblePlant)
-            assert(areEqual(plantPickle, applePickle))
+            assert(plantPickle == applePickle)
           }
           "unpickle" - {
             val unpickleFruit = Unpickle[Fruit].from(expectedApplePickle).get
@@ -55,7 +59,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
         "carrot" - {
           "pickle" - {
             val carrotPickle = Pickle(carrot)
-            assert(areEqual(carrotPickle, expectedCarrotPickle))
+            assert(carrotPickle == expectedCarrotPickle)
           }
           "unpickle" - {
             val unpickle = Unpickle[EdiblePlant].from(expectedCarrotPickle).get
@@ -63,7 +67,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
           }
         }
         "null" - {
-          val pickle: P = config.makeNull
+          val pickle: JsValue = config.makeNull
 
           "pickle" - {
             assert(Pickle(null: EdiblePlant) == pickle)
@@ -79,7 +83,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
 
         "pickle" - {
           val favoritePickles = Pickle(favoriteFoods)
-          assert(areEqual(favoritePickles, expectedMapPickle))
+          assert(favoritePickles == expectedMapPickle)
         }
 
         "unpickle" - {
@@ -93,7 +97,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
 
         "pickle" - {
           val p = Pickle(seq)
-          assert(areEqual(p, expectedPickle))
+          assert(p == expectedPickle)
         }
         "unpickle" - {
           val unpickle = Unpickle[Seq[String]].from(expectedPickle).get
@@ -106,7 +110,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
 
         "pickle" - {
           val p = Pickle(set)
-          assert(areEqual(p, expectedPickle))
+          assert(p == expectedPickle)
         }
         "unpickle" - {
           val unpickle = Unpickle[Set[String]].from(expectedPickle).get
@@ -126,9 +130,17 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
       "case_class_with_doubly_nested_parametric_field"-{
         Unpickle[DoublyNested].from(Pickle(DoublyNested(None)))
       }
+      "intoString"-{
+        val s = Pickle.intoString(benDetails)
+        assert(expectedBenDetailsString == s)
+      }
+      "fromString"-{
+        val actual = Unpickle[PersonalDetails].fromString(expectedBenDetailsString)
+        assert(Success(benDetails) == actual)
+      }
   }
     "with acyclic config"-{
-      implicit val acyclicConfig: PConfig[P] = configFactory(false)
+      implicit val acyclicConfig = JsConfig(isCyclesSupported = false)
 
       "over cyclic structure"-{
 
@@ -150,7 +162,7 @@ abstract class PickleTests[P](configFactory: Boolean => PConfig[P], testData: Te
           assert(afterPickling._2 == brotherDetails)
         }
 
-        "no id tags added to pickle"-{assert(areEqual(pickle, stripIdTags(pickle)))}
+        "no id tags added to pickle"-{assert(pickle == stripIdTags(pickle))}
 
         "no state during pickle"-{assert(pickleState.refs.isEmpty)}
         "no state during unpickle"-{assert(unpickleState.isEmpty)}

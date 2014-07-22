@@ -2,7 +2,7 @@ package prickle
 
 import scala.language.experimental.macros
 import scala.collection.mutable
-import scala.reflect.ClassTag
+import microjson._
 
 
 /** Use this object to invoke Pickling from user code */
@@ -10,6 +10,11 @@ object Pickle {
 
   def apply[A, P](value: A, state: PickleState = PickleState())(implicit p: Pickler[A], config: PConfig[P]): P =
     p.pickle(value, state)(config)
+
+  def intoString[A](value: A, state: PickleState = PickleState())(implicit p: Pickler[A], config: PConfig[JsValue]): String = {
+    val pickle = p.pickle(value, state)(config)
+    Json.write(pickle)
+  }
 
   def withPickler[A, P](value: A, state: PickleState = PickleState(), p: Pickler[A])(implicit config: PConfig[P]): P =
     p.pickle(value, state)(config)
@@ -35,7 +40,7 @@ trait  Pickler[A] {
 /** Do not import this companion object into scope in user code.*/
 object Pickler extends MaterializePicklerFallback {
 
-  private[prickle] def resolvingSharing[P](value: Any, fieldPickles: Seq[(String, P)], state: PickleState, config: PConfig[P]): P = {
+  def resolvingSharing[P](value: Any, fieldPickles: Seq[(String, P)], state: PickleState, config: PConfig[P]): P = {
     if (config.isCyclesSupported) {
       state.refs.get(value).fold {
         state.seq += 1

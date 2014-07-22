@@ -1,21 +1,3 @@
-#Prickle
-
-Prickle is a library for serializing (pickling) object graphs between Scala and Scala.js. It is based upon scala-js-pickling, but adds three key improvements:
-
-* Better support for class hierarchies
-* Support for sharing and cycles in the serialized object graph
-* Pickles to/from Strings, so no platform-specific JSON dependencies are required
-
-Currently, prickle supports automatic, reflection-free recursive pickling of
-* Case classes
-* Case objects
-* Seqs, Sets and Maps
-* Primitives
-
-
-##[Example](https://github.com/benhutchison/prickle/blob/master/example/src/main/scala/Example.scala)
-
-```scala
 import prickle._
 
 sealed trait Fruit
@@ -58,16 +40,3 @@ object Example extends App {
 
   println(s"The rehydrated object graph doesnt contain duplicated lemons:\n${rehydratedSalad}\n")
 }
-```
-
-##Basic Concepts
-
-Like scala-pickling and scala-js-pickling, prickle uses implicit Pickler[T] and Unpickler[T] type-classes to transform values of type T. For case classes, these type classes will be automatically generated via an implicit macro, if they are not already available in implicit scope. This is a recursive process, so that picklers & unpicklers for each field of type T will also be resolved and possibly generated.
-
-
-
-##Support for Class Hierarchies & Sum-types
-
-##Support for Shared objects
-
-##Pickling to/from String

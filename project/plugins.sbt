@@ -1,9 +1,8 @@
-addSbtPlugin("org.scala-lang.modules.scalajs" % "scalajs-sbt-plugin" % "0.4.4")
 
-addSbtPlugin("com.lihaoyi" % "utest-js-plugin" % "0.1.3")
+addSbtPlugin("org.scala-lang.modules.scalajs" % "scalajs-sbt-plugin" % "0.5.1")
 
-resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+addSbtPlugin("com.lihaoyi" % "utest-js-plugin" % "0.1.6")
 
-resolvers += "Typesafe snapshots" at "http://repo.typesafe.com/typesafe/snapshots/"
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "0.2.1")
 
-resolvers += Resolver.sonatypeRepo("releases")
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8.3")

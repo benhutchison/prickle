@@ -1,12 +1,13 @@
 package prickle
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import collection.mutable
 
-object PConfig extends DefaultPickleFormat {
+import microjson._
 
-//  object AcyclicConfig extends AcyclicPConfig[PFormat] with HashCharPrefix[PFormat]
-//    with SimplePBuilder with SimplePReader
+object PConfig {
+  implicit val Default = new JsConfig()
+
 }
 
 trait PConfig[P] extends PReader[P] with PBuilder[P] {
@@ -16,12 +17,14 @@ trait PConfig[P] extends PReader[P] with PBuilder[P] {
   def isCyclesSupported: Boolean
 
 }
-trait HashCharPrefix[P] extends PConfig[P] {
 
-  def prefix = "#"
-}
-trait CyclicPConfig[P] extends PConfig[P] {
-  def isCyclesSupported = true
+case class JsConfig(val prefix: String = "#", val isCyclesSupported: Boolean = true)
+  extends PConfig[JsValue] with JsBuilder with JsReader {
+
+  def onUnpickle(id: String, value: Any, state: mutable.Map[String, Any]) = {
+    state += (id -> value)
+  }
+
 }
 trait AcyclicPConfig[P] extends PConfig[P] {
   def isCyclesSupported = false
@@ -52,11 +55,60 @@ trait PReader[P] {
   def readArrayElem(x: P, index: Int): Try[P]
   def readObjectField(x: P, field: String): Try[P]
 
-  /** Should provide some diagnostic string about the pickle 'x', eg its content.
-    * Used to build error messages. */
-  def context(x: P): String
-
   def readObjectFieldStr(x: P, field: String): Try[String] = readObjectField(x, field).flatMap(readString)
 
   def readObjectFieldNum(x: P, field: String): Try[Double] = readObjectField(x, field).flatMap(readNumber)
+}
+
+
+trait JsBuilder extends PBuilder[JsValue] {
+  def makeNull(): JsValue = JsNull
+  def makeBoolean(b: Boolean): JsValue = if (b) JsTrue else JsFalse
+  def makeNumber(x: Double): JsValue = {
+    val raw = x.toString
+    val s = if (raw.contains("."))
+      new String(raw.toCharArray.reverse.dropWhile(_ == '0').dropWhile(_ == '.').reverse)
+    else
+      raw
+    JsNumber(s)
+  }
+
+  def makeString(s: String): JsValue = JsString(s)
+  def makeArray(elems: JsValue*): JsValue = JsArray(elems)
+  def makeObject(fields: Seq[(String, JsValue)]): JsValue = JsObject(fields.toMap)
+}
+
+trait JsReader extends PReader[JsValue] {
+  def isNull(x: JsValue): Boolean = x match {
+    case JsNull => true
+    case _ => false
+  }
+  def readBoolean(x: JsValue): Try[Boolean] = x match {
+    case JsTrue => Success(true)
+    case JsFalse => Success(false)
+    case other => error("boolean", s"$other")
+  }
+  def readNumber(x: JsValue): Try[Double] = x match {
+    case x: JsNumber => Try(x.value.toDouble)
+    case other => error("number", s"$other")
+  }
+  def readString(x: JsValue): Try[String] = x match {
+    case s: JsString => Success(s.value)
+    case other => error("string", s"$other")
+  }
+  def readArrayLength(x: JsValue): Try[Int] = x match {
+    case x: JsArray => Success(x.value.length)
+    case other => error("array length", s"$other")
+  }
+  def readArrayElem(x: JsValue, index: Int): Try[JsValue] = x match {
+    case x: JsArray if index < x.value.length => Success(x.value(index))
+    case other => error(s"array($index)", s"$other")
+  }
+  def readObjectField(x: JsValue, field: String): Try[JsValue] = x match {
+    case x: JsObject => Try(x.value(field))
+    case other =>  error(s"field \'$field\'", s"$other")
+  }
+
+  def error(exp: String, actual: String) = Failure(new RuntimeException(s"Expected: $exp  Actual: $actual"))
+
 }
