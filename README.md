@@ -34,7 +34,6 @@ To run:
 ```sbt
 > example/run
 ```
-
 Demonstrates: 
 - Basic pickling of values whose static types is the same as their runtime class.
 - Using CompositePicklers to pickle class hierarchies, i.e. values whose static type is more general than their runtime class. 
@@ -106,8 +105,8 @@ Prickle acknowledges the possibility of failure by returning a Try[T] when attem
 
 ##Support for Class Hierarchies and Sum Types
 
-It's common to have situations where the concrete type of a value is not known statically;
-Eg when using a class hierarchy or [Sum Types](http://en.wikipedia.org/wiki/Tagged_union).
+It's common to have a hierarchy of classes where the concrete type of a value is not known statically.
+In some contexts these are called [Sum Types](http://en.wikipedia.org/wiki/Tagged_union).
 
 Prickle supports these via CompositePicklers. These are not automically derived by a macro, 
 but must be configured by the programmer, and assigned to an implicit val. 
@@ -116,7 +115,7 @@ The pickle and unpickle operations can be specified together, yielding a `Pickle
 and all specified concrete subclasses. There are background implicit conversions in the `Pickler` and `Unpickler` that
 can auto-unpack `PicklerPairs` into their two parts.
 
-For example, the code below creates a `PicklerPair[Fruit]`, that handles two cases of fruit,
+For example, the code below creates a PicklerPair[Fruit], that handles two cases of fruit,
 `Apple`s and `Lemon`s:
 `CompositePickler[Fruit].concreteType[Apple].concreteType[Lemon]`
 
