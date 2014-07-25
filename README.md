@@ -13,7 +13,16 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 * Primitives
 
 
-##[Example](https://github.com/benhutchison/prickle/blob/master/example/src/main/scala/Example.scala)
+##[Runnable Example](https://github.com/benhutchison/prickle/blob/master/example/src/main/scala/Example.scala)
+
+To run:
+```sbt
+> example/run```
+
+Demonstrates: 
+- Basic pickling of values whose static types is the same as their runtime class.
+- Using CompositePicklers to pickle class hierarchies, i.e. values whose static type is more general than their runtime class. 
+- Support for shared objects in the pickled graph
 
 ```scala
 import prickle._
@@ -66,7 +75,30 @@ Like scala-pickling and scala-js-pickling, prickle uses implicit Pickler[T] and 
 
 
 
-##Support for Class Hierarchies & Sum-types
+##Support for Class Hierarchies / Sum-types
+
+It's common to have a hierarchy of classes where the concrete type of a value is not known statically.
+In some contexts these are called [Sum Types](http://en.wikipedia.org/wiki/Tagged_union).
+
+Prickle supports these via CompositePicklers. These are not automically derived by a macro, 
+but must be configured by the programmer, and assigned to an implicit val. 
+
+The pickle and unpickle operations can be specified together, yielding a `PicklerPair[A]`, that knows how to pickle/unpickle values of type `A`,
+and all specified concrete subclasses. There are background implicit conversions in the `Pickler` and `Unpickler` that
+can auto-unpack `PicklerPairs` into their two parts.
+
+For example, the code below creates a PicklerPair[Fruit], that handles two cases of fruit,
+`Apple`s and `Lemon`s:
+`CompositePickler[Fruit].concreteType[Apple].concreteType[Lemon]`
+
+### Improved Type-Safety vs [scala-js-pickling](https://github.com/scala-js/scala-js-pickling)
+
+CompositePicklers play a similar role to the PicklerRegistry used in scala-js-pickling, but are safer.
+In Prickle, missing Picklers will normally result in a compile-time error, as an implicit not found. 
+(The exception is unregistered concrete subclasses of a CompositePickler.) 
+However, in Scala-js-pickling, the discovery of missing un/picklers occurs at runtime when un/pickling is attempted.
+
+![Composite Picklers Vs Singleton Registry](/docs/CompositePicklersVsRegistry.png?raw=true "Composite Picklers Vs Singleton Registry")
 
 ##Support for Shared objects
 
