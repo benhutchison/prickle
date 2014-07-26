@@ -233,7 +233,7 @@ you're very lucky! For the rest of you, here's some tips for diagnosing such pro
 - Divide and conquer: break up big chains of implicit dependencies into simpler pieces, get them working, then combine.
 - Don't always take the compiler errors literally - the root cause often lies elsewhere to the sympton. Especially when implicit materialization is involved.
 - You can manually invoke materialisation, to test if its working OK, eg like this 
-- ```scala
+```scala
 implicit val personPickler: Pickler[Person] = Pickler.materializePickler[Person]
 ``` 
 - This compiler option can help diagnose implicit problems (in `build.sbt` form): `scalacOptions ++= Seq("-Xlog-implicits")`
