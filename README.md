@@ -4,9 +4,9 @@ Prickle is a library for easily pickling (serializing) object graphs between Sca
 
 It is based upon scala-js-pickling, but adds several improvements & refinements:
 
+* [Pickling to/from Strings](#pickling-to-string-by-default)
 * [Better support for class hierarchies / sum types](#support-for-class-hierarchies-and-sum-types)
 * [Support for shared objects and cycles in the serialized object graph](#support-for-shared-objects)
-* [Pickles to/from Strings](#pickling-to-string)
 * [Unpickling a value of type T yields a Try[T]](#unpickling-yields-a-try)
 * 100% identical scala code between JVM and JS; no platform specific dependecy 
 
@@ -23,6 +23,14 @@ Scala.jvm 2.11+
 
 Scala.js 0.5+
 `"com.github.benhutchison" %%% "prickle" % "1.0"`
+
+To use, import the package, but do not import on the Pickler & Unpickler objects
+```scala
+import prickle._
+
+//!Don't do this. Not Necessary
+import Pickler._
+```
 
 Prickle depends upon [microjson](https://github.com/benhutchison/MicroJson) in its default pickle configuration.
 
@@ -84,24 +92,33 @@ object Example extends App {
 }
 ```
 
-##Basic Concepts
 
-Like scala-pickling and scala-js-pickling, prickle uses implicit `Pickler[T]` and `Unpickler[T]` type-classes to transform values of type T. 
-For case classes, these type classes will be automatically generated via an implicit macro, if they are not already available in implicit scope. This is a recursive process, so that picklers & unpicklers for each field of type T will also be resolved and possibly generated.
+##Pickling to String by Default 
 
+Prickle expects you probably want to pickle to and from a json String, so this is
+the default. Because Strings are defined in both Scala and Scala.js core lib, there
+is no need to depend upon a platform-specific json dependency.
 
-### Unpickling yields a Try
- 
-It's tempting to think of Pickling and Unpickling as symmetrical, inverse operations 
- (eg `T => String`, `String => T`) but there is one key difference in practice: Unpickling is
- far more likely to fail. 
- 
-This stems from the nature of the operations. Pickling transforms a structured, well typed object graph into flattened, stringly-typed data. 
-Unpickling takes a weakly-typed string and re-constructs the typed object-graph from it. Most arbitrary strings won't re-construct valid
-object graphs, so the unpickle operation attempts to move from a higher entropy state to a lower entropy state.
+Call `prickle.Pickle.intoString()` to pickle your object. The static type of the passed object
+will be used to search for Pickler typeclasses in implicit scope. If none are found, and the object is 
+a case-class or case-object, a macro will *materialize* a pickler using compile-time reflection
+to analyze the fields of the object.
 
-Prickle acknowledges the possibility of failure by returning a Try[T] when attempting to unpickle 
-([An extended talk about the philosophy guiding this design, with supa-crunch audio](https://www.youtube.com/watch?v=ujpHtodp6OQ)) 
+When Unpickling with `prickle.Unpickle[T].fromString()`, you must tell prickle what type to unpickle into, since it's unable to determine
+this from the String parameter.
+
+```
+val p = Person("Ben", "Hutchison")
+
+val s: String = Pickle.toString(p)
+
+val tryPerson = Unpickle[Person].fromString(s)
+```
+
+Under the hood, prikle converts objects to/from a json model (`microjson.JsValue`)
+based on the [microjson library](https://github.com/benhutchison/MicroJson). 
+MicroJson then renders or parses the JSON object graph to a flat String.
+
 
 ##Support for Class Hierarchies and Sum Types
 
@@ -111,13 +128,17 @@ In some contexts these are called [Sum Types](http://en.wikipedia.org/wiki/Tagge
 Prickle supports these via CompositePicklers. These are not automically derived by a macro, 
 but must be configured by the programmer, and assigned to an implicit val. 
 
+Example: How to creates a PicklerPair[Fruit], that handles two cases of fruit,
+`Apple`s and `Lemon`s:
+```scala
+import prickle._ 
+
+implicit val fruitPickler = CompositePickler[Fruit].concreteType[Apple].concreteType[Lemon]
+```
+
 The pickle and unpickle operations can be specified together, yielding a `PicklerPair[A]`, that knows how to pickle/unpickle values of type `A`,
 and all specified concrete subclasses. There are background implicit conversions in the `Pickler` and `Unpickler` that
 can auto-unpack `PicklerPairs` into their two parts.
-
-For example, the code below creates a PicklerPair[Fruit], that handles two cases of fruit,
-`Apple`s and `Lemon`s:
-`CompositePickler[Fruit].concreteType[Apple].concreteType[Lemon]`
 
 ### Improved Type-Safety vs [scala-js-pickling](https://github.com/scala-js/scala-js-pickling)
 
@@ -127,6 +148,48 @@ In Prickle, missing Picklers will normally result in a compile-time error, as an
 However, in Scala-js-pickling, the discovery of missing un/picklers occurs at runtime when un/pickling is attempted.
 
 ![Composite Picklers Vs Singleton Registry](/docs/CompositePicklersVsRegistry.png?raw=true "Composite Picklers Vs Singleton Registry")
+
+
+##Picklers, Unpicklers, Macros and Formats
+
+Like scala-pickling and scala-js-pickling, prickle uses implicit `Pickler[T]` and `Unpickler[T]` type-classes to transform values of type T. 
+
+For case classes and case objects, these type classes will be automatically *materialized* via an implicit macro, 
+if they aren't found in implicit scope. 
+This is recursive, so picklers & unpicklers for each field will also be resolved and possibly materialized.
+
+If there is a non-case class you wish to pickle that's unsupported out-of-the-box, 
+you can define your own and put them in implicit scope. See `prickle.Pickler` and `prickle.Unpickler` for examples.
+
+Prickle isn't limited to pickling to Strings - any json-like format can be used.
+You will need to implement`prickle.PReader` and `prickle.PBuilder` for your format,
+and pass a custom PConfig when un/pickling.
+
+```scala
+import prickle._
+
+implicit val myConfig: PConfig[Array[Byte]] = ??? //..your defn goes here
+
+val p = Person("Ben", "Hutchison")
+
+val bytes: Array[Byte] = Pickle(p)
+
+val tryPerson = Unpickle[Person].from(bytes)
+```
+
+
+### Unpickling yields a Try
+ 
+It's tempting to think of Pickling and Unpickling as symmetrical, inverse operations 
+ (eg `T => String`, `String => T`) but there's a difference: Unpickling is
+ far more likely to fail. 
+ 
+This stems from the nature of the operations. Pickling transforms a structured, well typed object graph into flattened, stringly-typed data. 
+Unpickling takes a weakly-typed string and re-constructs the typed object-graph from it. Most arbitrary strings won't re-construct valid
+object graphs, so the unpickle operation attempts to move from a higher entropy state to a lower entropy state.
+
+Prickle acknowledges the possibility of failure by returning a Try[T] when attempting to unpickle 
+([An extended talk about the philosophy guiding this design, with supa-crunch audio](https://www.youtube.com/watch?v=ujpHtodp6OQ)) 
 
 ##Support for Shared objects
 
@@ -160,31 +223,37 @@ These *internal keys* are
 - cls: the concrete class of a pickled object
 - val: identifies the fields of a pickled object
 
-##Pickling to String 
-
-The default pickle format is JsValue from the [microjson library](https://github.com/benhutchison/MicroJson). 
-`JsValue` serves as a waypoint in structured JSON to/from a `String`.
-Because un/pickling to String is so common, methods existing to go straight to and
-from Strings:
-```
-val p = Person("Ben", "Hutchison")
-
-val s: String = Pickle.toString(p)
-
-Unpickle[Person].fromString(s): Try[A]
-```
-
 ##Troubleshooting
 
-It's likely you will hit "Implicit Parameter Not Found" errors when you first use prickle on a non-trivial problem.
-Here's some tips for diagnosing such problems:
+If you escape "Implicit Parameter Not Found" errors when you first use prickle on a non-trivial problem,
+you're very lucky! For the rest of you, here's some tips for diagnosing such problems:
 
-- Firstly, Prickle pushes more errors to compile-time, so be patient
-- TODO
+- Firstly, be patient: Prickle pushes more errors to compile-time, so you're doing the debugging early. 
+- Typically, the errors result from a missing type-class for some type in your object graph. The goal therefore is to find which one and why.
+- Divide and conquer: break up big chains of implicit dependencies into simpler peeces, get them working, then combine.
+- Don't always take the compiler errors literally - the root cause often lies elsewhere to the sympton. Especially when implicit materialization is involved.
+- You can manually invoke materialisation, to test if its working OK, eg like this ```scala
+implicit val personPickler: Pickler[Person] = Pickler.materializePickler[Person]
+``` 
+- This compiler option can help diagnose implicit problems (in `build.sbt` form): `scalacOptions ++= Seq("-Xlog-implicits")`
+- Be aware that Picklers and Unpicklers are [invariant](http://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)), which can lead to puzzling errors:
+```scala
+import prickle._
+trait Fruit
+class Lemon extends Fruit
+implicit val fruitPickler: Pickler[Fruit] = ???
+val l = new Lemon()
 
+//won't compile, because we don't have a Pickler of *Lemons*
+//Pickle(l)
+
+//Acribing type Fruit (up-casting) compiles OK
+Pickle(l: Fruit)
+```
+ 
 ##Authors
-
+    
 Prickle is written and maintained by Ben Hutchison.
 
-Credits to Sebastien Doeraene for scala-js-pickling, Li Haoyi for microjson,
-and Eugene Burmako for helping fix Prickle's macro.
+Credit & thanks to Sebastien Doeraene for scala-js-pickling, Li Haoyi for microjson,
+and Eugene Burmako for helping fix Prickle's macros.
