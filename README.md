@@ -230,9 +230,10 @@ you're very lucky! For the rest of you, here's some tips for diagnosing such pro
 
 - Firstly, be patient: Prickle pushes more errors to compile-time, so you're doing the debugging early. 
 - Typically, the errors result from a missing type-class for some type in your object graph. The goal therefore is to find which one and why.
-- Divide and conquer: break up big chains of implicit dependencies into simpler peeces, get them working, then combine.
+- Divide and conquer: break up big chains of implicit dependencies into simpler pieces, get them working, then combine.
 - Don't always take the compiler errors literally - the root cause often lies elsewhere to the sympton. Especially when implicit materialization is involved.
-- You can manually invoke materialisation, to test if its working OK, eg like this ```scala
+- You can manually invoke materialisation, to test if its working OK, eg like this 
+- ```scala
 implicit val personPickler: Pickler[Person] = Pickler.materializePickler[Person]
 ``` 
 - This compiler option can help diagnose implicit problems (in `build.sbt` form): `scalacOptions ++= Seq("-Xlog-implicits")`
