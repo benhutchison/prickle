@@ -13,7 +13,7 @@ It is based upon scala-js-pickling, but adds several improvements & refinements:
 Currently, prickle supports automatic, reflection-free recursive pickling of
 * Case classes
 * Case objects
-* Seqs, Sets and Maps
+* Seqs, Sets, Maps and SortedMaps
 * Primitives
 
 ##Getting Prickle
