@@ -1,5 +1,6 @@
 package prickle
 
+import scala.collection.immutable.SortedMap
 import scala.language.experimental.macros
 import scala.collection.mutable
 import microjson._
@@ -107,6 +108,16 @@ object Pickler extends MaterializePicklerFallback {
 
   implicit def mapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[Map[K, V]] {
     def pickle[P](value: Map[K, V], state: PickleState)(implicit config: PConfig[P]): P = {
+      val entries = value.map(kv => {
+        val (k, v) = kv
+        config.makeArray(Pickle(k, state), Pickle(v, state))
+      })
+      config.makeArray(entries.toSeq: _*)
+    }
+  }
+
+  implicit def sortedMapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[SortedMap[K, V]] {
+    def pickle[P](value: SortedMap[K, V], state: PickleState)(implicit config: PConfig[P]): P = {
       val entries = value.map(kv => {
         val (k, v) = kv
         config.makeArray(Pickle(k, state), Pickle(v, state))

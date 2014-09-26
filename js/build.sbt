@@ -1,5 +1,9 @@
 import scala.scalajs.sbtplugin.ScalaJSPlugin._
 
+import xerial.sbt.Sonatype.SonatypeKeys._
+
 scalaJSSettings
 
-libraryDependencies += "com.github.benhutchison" %%% "MicroJson" % "0.1"
+sonatypeSettings
+
+libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.0"

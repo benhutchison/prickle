@@ -1,9 +1,9 @@
 package prickle
 
 import utest._
+import scala.collection.immutable.SortedMap
 import scala.util.Success
 
-import scala.collection.mutable
 
 import microjson._
 
@@ -91,6 +91,10 @@ object PickleTests extends TestSuite {
           assert(unpickle == favoriteFoods)
         }
       }
+      "sorted maps" - {
+        val map = SortedMap[Int, String](1 -> "Sydney", 2 -> "Inverloch")
+        assert(Unpickle[SortedMap[Int, String]].fromString(Pickle.intoString(map)).get == map)
+      }
       "seqs" - {
         val seq = Seq("One", "Two")
         val expectedPickle = makeArray(makeString("One"), makeString("Two"))
@@ -149,7 +153,7 @@ object PickleTests extends TestSuite {
         val pickleState = PickleState()
         val pickle = Pickle(brothers, pickleState)
 
-        val unpickleState = mutable.Map.empty[String, Any]
+        val unpickleState = collection.mutable.Map.empty[String, Any]
         val afterPickling = Unpickle[(PersonalDetails, PersonalDetails)].from(pickle, unpickleState).get
 
         val p1 = afterPickling._1.parent

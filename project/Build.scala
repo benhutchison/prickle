@@ -9,12 +9,12 @@ object Build extends sbt.Build{
   val cross = new utest.jsrunner.JsCrossBuild(
     organization := "com.github.benhutchison",
 
-    version := "1.0",
-    scalaVersion := "2.11.1",
+    version := "1.0.1",
+    scalaVersion := "2.11.2",
     name := "prickle",
-    crossScalaVersions := Seq("2.11.1"),
+    crossScalaVersions := Seq("2.11.2"),
 
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.1" % "compile",
+    libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.2" % "compile",
 
     publishArtifact in Test := false,
     publishTo <<= version { (v: String) =>

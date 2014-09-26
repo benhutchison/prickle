@@ -1,5 +1,6 @@
 package prickle
 
+import scala.collection.immutable.SortedMap
 import scala.util.{Success, Failure, Try}
 import collection.mutable
 import scala.language.experimental.macros
@@ -110,6 +111,27 @@ object Unpickler extends MaterializeUnpicklerFallback {
         }
       } yield
         kvs.foldLeft(Map.empty[K, V])((m, kv) => m.updated(kv._1, kv._2))
+    }
+  }
+
+  implicit def sortedMapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V], ord: Ordering[K]) =  new Unpickler[SortedMap[K, V]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[SortedMap[K, V]] = {
+
+      val KeyIndex = 0
+      val ValueIndex = 1
+      for {
+        len <- config.readArrayLength(pickle)
+        kvs <- Try {
+          (0 until len).toList.map(index => for {
+            entryPickle <- config.readArrayElem(pickle, index)
+            kp <- config.readArrayElem(entryPickle, KeyIndex)
+            k <- ku.unpickle(kp, state)
+            vp <- config.readArrayElem(entryPickle, ValueIndex)
+            v <- vu.unpickle(vp, state)
+          } yield k -> v).map(_.get)
+        }
+      } yield
+        kvs.foldLeft(SortedMap.empty[K, V])((m, kv) => m.updated(kv._1, kv._2))
     }
   }
 
