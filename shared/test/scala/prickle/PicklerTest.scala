@@ -1,5 +1,7 @@
 package prickle
 
+import java.util.Date
+
 import utest._
 import scala.collection.immutable.SortedMap
 import scala.util.Success
@@ -95,6 +97,10 @@ object PickleTests extends TestSuite {
         val map = SortedMap[Int, String](1 -> "Sydney", 2 -> "Inverloch")
         assert(Unpickle[SortedMap[Int, String]].fromString(Pickle.intoString(map)).get == map)
       }
+      "dates" - {
+        val date = new Date()
+        assert(Unpickle[Date].fromString(Pickle.intoString(date)).get == date)
+      }
       "seqs" - {
         val seq = Seq("One", "Two")
         val expectedPickle = makeArray(makeString("One"), makeString("Two"))
@@ -174,4 +180,5 @@ object PickleTests extends TestSuite {
     }
   }
 }
+
 case class DoublyNested(field:  Option[(Fruit, Int)])
