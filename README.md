@@ -14,15 +14,16 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 * Case classes
 * Case objects
 * Seqs, Sets, Maps and SortedMaps
+* Dates
 * Primitives
 
 ##Getting Prickle
 
 Scala.jvm 2.11+
-`"com.github.benhutchison" %% "prickle" % "1.0.1"`
+`"com.github.benhutchison" %% "prickle" % "1.0.2"`
 
 Scala.js 0.5+
-`"com.github.benhutchison" %%% "prickle" % "1.0.1"`
+`"com.github.benhutchison" %%% "prickle" % "1.0.2"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
