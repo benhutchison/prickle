@@ -3,6 +3,7 @@ package prickle
 import scala.collection.immutable.SortedMap
 import scala.util.{Success, Failure, Try}
 import collection.mutable
+import scala.concurrent.duration.Duration
 import scala.language.experimental.macros
 import microjson._
 
@@ -91,6 +92,11 @@ object Unpickler extends MaterializeUnpicklerFallback {
       else
         config.readString(pickle)
     }
+  }
+
+  implicit object DurationUnpickler extends Unpickler[Duration] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Duration] =
+      LongUnpickler.unpickle(pickle, state).map(f => Duration.fromNanos(f))
   }
 
   implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]) =  new Unpickler[Map[K, V]] {

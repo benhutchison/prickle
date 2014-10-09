@@ -2,9 +2,11 @@ package prickle
 
 import microjson._
 
+import scala.concurrent.duration._
+
 case class Person(name: String)
 case class PersonalDetails(person: Person, starsign: String, age: Int, isFunny: Boolean, height: Double, parent: Person, ref: AnObject.type, favoriteLawnmower: ModelNumber)
-case class ModelNumber(series: Char, model: Short, variant: Byte, barcode: Long, fuelConsumption: Float)
+case class ModelNumber(series: Char, model: Short, variant: Byte, barcode: Long, fuelConsumption: Float, engineDuration: Duration)
 case object AnObject
 
 trait EdiblePlant
@@ -26,7 +28,8 @@ class TestData() {
   implicit val fruitPickler = CompositePickler[Fruit].concreteType[Apple].concreteType[Lime]
   implicit val plantPickler = CompositePickler[EdiblePlant].concreteType[Carrot.type].concreteType[Apple].concreteType[Lime]
 
-  val lawnmowerModel = ModelNumber('V', 2000, 42, 1234567890l, -0.125f)
+
+  val lawnmowerModel = ModelNumber('V', 2000, 42, 1234567890l, -0.125f, 365.days)
   val parent = Person("Keith")
   val ben = Person("Ben")
   val benDetails = PersonalDetails(ben, null, 40, false, 175.6667, parent, AnObject, lawnmowerModel)
@@ -53,11 +56,12 @@ class TestData() {
       "barcode" -> makeObjectFrom("l" -> makeNumber(1442514), "m" -> makeNumber(294), "h" -> makeNumber(0)),
       "model" -> makeNumber(2000),
       "variant" -> makeNumber(42),
-      "fuelConsumption" -> makeNumber(-0.125))
+      "fuelConsumption" -> makeNumber(-0.125),
+      "engineDuration" -> makeObjectFrom("l" -> makeNumber(2293760), "m" -> makeNumber(2575542), "h" -> makeNumber(1792)))
   )
 
   val expectedBenDetailsString =
-    """{"favoriteLawnmower": {"series": "V", "barcode": {"l": 1442514, "m": 294, "h": 0}, "#id": "3", "model": 2000, "variant": 42, "fuelConsumption": -0.125}, "parent": {"#id": "2", "name": "Keith"}, "#id": "4", "isFunny": false, "height": 175.6667, "ref": {"#scalaObj": "prickle.AnObject"}, "age": 40, "starsign": null, "person": {"#id": "1", "name": "Ben"}}"""
+    """{"favoriteLawnmower": {"series": "V", "barcode": {"l": 1442514, "m": 294, "h": 0}, "#id": "3", "model": 2000, "engineDuration": {"l": 2293760, "m": 2575542, "h": 1792}, "variant": 42, "fuelConsumption": -0.125}, "parent": {"#id": "2", "name": "Keith"}, "#id": "4", "isFunny": false, "height": 175.6667, "ref": {"#scalaObj": "prickle.AnObject"}, "age": 40, "starsign": null, "person": {"#id": "1", "name": "Ben"}}"""
 
   val appleCls: JsValue = makeString("prickle.Apple")
   val carrotCls: JsValue = makeString("prickle.Carrot$")

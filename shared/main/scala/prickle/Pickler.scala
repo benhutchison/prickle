@@ -3,6 +3,7 @@ package prickle
 import scala.collection.immutable.SortedMap
 import scala.language.experimental.macros
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
 import microjson._
 
 
@@ -104,6 +105,11 @@ object Pickler extends MaterializePicklerFallback {
   implicit object StringPickler extends Pickler[String] {
     def pickle[P](x: String, state: PickleState)(implicit config: PConfig[P]): P =
       config.makeString(x)
+  }
+
+  implicit object DurationPickler extends Pickler[Duration] {
+    def pickle[P](x: Duration, state: PickleState)(implicit config: PConfig[P]): P =
+      LongPickler.pickle(x.toNanos, state)
   }
 
   implicit def mapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[Map[K, V]] {
