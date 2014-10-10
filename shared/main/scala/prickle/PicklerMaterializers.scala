@@ -2,7 +2,7 @@ package prickle
 
 import scala.language.experimental.macros
 
-import scala.reflect.macros.blackbox.Context
+import scala.reflect.macros.Context
 
 
 object PicklerMaterializersImpl {
@@ -27,14 +27,14 @@ object PicklerMaterializersImpl {
       q"""config.makeObject("#scalaObj", config.makeString(${sym.fullName}))"""
 
     } else {
-      val accessors = (tpe.decls collect {
+      val accessors = (tpe.declarations collect {
         case acc: MethodSymbol if acc.isCaseAccessor => acc
       }).toList
 
       val pickleFields = for {
         accessor <- accessors
       } yield {
-        val fieldName = accessor.name
+        val fieldName = accessor.name.asInstanceOf[TermName]
         val fieldString = fieldName.toString()
 
         val fieldPickle = q"prickle.Pickle.withConfig(value.$fieldName, state, config)"
@@ -56,7 +56,7 @@ object PicklerMaterializersImpl {
         Pickler.resolvingSharing[P](value, fieldPickles, state, config)
       """
     }
-    val name = TermName(c.freshName("GenPickler"))
+    val name = newTermName(c.fresh("GenPickler"))
 
     val result = q"""
       implicit object $name extends prickle.Pickler[$tpe] {
@@ -86,7 +86,7 @@ object PicklerMaterializersImpl {
       c.parse(sym.fullName)
     } else {
       val unpickleBody = {
-        val accessors = (tpe.decls.collect {
+        val accessors = (tpe.declarations.collect {
           case acc: MethodSymbol if acc.isCaseAccessor => acc
         }).toList
 
@@ -120,7 +120,7 @@ object PicklerMaterializersImpl {
     else
       q"null"
 
-    val name = TermName(c.freshName("GenUnpickler"))
+    val name = newTermName(c.fresh("GenUnpickler"))
 
     val result = q"""
       implicit object $name extends prickle.Unpickler[$tpe] {

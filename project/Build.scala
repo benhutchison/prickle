@@ -12,9 +12,17 @@ object Build extends sbt.Build{
     version := "1.0.2",
     scalaVersion := "2.11.2",
     name := "prickle",
-    crossScalaVersions := Seq("2.11.2"),
+    crossScalaVersions := Seq("2.10.4", "2.11.2"),
 
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.2" % "compile",
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "compile"
+    ) ++ (
+      if (scalaVersion.value startsWith "2.11.") Nil
+      else Seq(
+        "org.scalamacros" %% "quasiquotes" % "2.0.0" % "provided",
+        compilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full)
+      )
+    ),
 
     publishArtifact in Test := false,
     publishTo <<= version { (v: String) =>
