@@ -6,4 +6,4 @@ scalaJSSettings
 
 sonatypeSettings
 
-libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.0"
+libraryDependencies += "com.github.benhutchison" %%% "microjson" % "0.1"
