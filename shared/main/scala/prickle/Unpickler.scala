@@ -42,8 +42,10 @@ trait Unpickler[A] {
 /** Do not import this companion object into scope in user code.*/
 object Unpickler extends MaterializeUnpicklerFallback {
 
+  /** In english: ensure that the state is updated to include the object being unpickled (`value`),
+    * if it has an id.*/
   def resolvingSharing[P](value: Any, pickle: P, state: mutable.Map[String, Any], config: PConfig[P]): Unit = {
-    if (config.isCyclesSupported)
+    if (config.areSharedObjectsSupported)
       config.readObjectField(pickle, config.prefix + "id").flatMap(
         field => config.readString(field)).foreach(
           id => state += (id -> value))
@@ -109,73 +111,98 @@ object Unpickler extends MaterializeUnpicklerFallback {
   implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]) =  new Unpickler[Map[K, V]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Map[K, V]] = {
 
-      val KeyIndex = 0
-      val ValueIndex = 1
-      for {
-        len <- config.readArrayLength(pickle)
-        kvs <- Try {
-          (0 until len).toList.map(index => for {
-            entryPickle <- config.readArrayElem(pickle, index)
-            kp <- config.readArrayElem(entryPickle, KeyIndex)
-            k <- ku.unpickle(kp, state)
-            vp <- config.readArrayElem(entryPickle, ValueIndex)
-            v <- vu.unpickle(vp, state)
-          } yield k -> v).map(_.get)
-        }
-      } yield
-        kvs.foldLeft(Map.empty[K, V])((m, kv) => m.updated(kv._1, kv._2))
+      val result = unpickleMap[K, V, Map[K, V], P](Map.empty, pickle, state)
+      result.foreach(Unpickler.resolvingSharing(_, pickle, state, config))
+      result
     }
   }
 
   implicit def sortedMapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V], ord: Ordering[K]) =  new Unpickler[SortedMap[K, V]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[SortedMap[K, V]] = {
 
-      val KeyIndex = 0
-      val ValueIndex = 1
-      for {
-        len <- config.readArrayLength(pickle)
-        kvs <- Try {
-          (0 until len).toList.map(index => for {
-            entryPickle <- config.readArrayElem(pickle, index)
-            kp <- config.readArrayElem(entryPickle, KeyIndex)
-            k <- ku.unpickle(kp, state)
-            vp <- config.readArrayElem(entryPickle, ValueIndex)
-            v <- vu.unpickle(vp, state)
-          } yield k -> v).map(_.get)
-        }
-      } yield
-        kvs.foldLeft(SortedMap.empty[K, V])((m, kv) => m.updated(kv._1, kv._2))
+      val result = unpickleMap[K, V, SortedMap[K, V], P](SortedMap.empty, pickle, state)
+      result.foreach(Unpickler.resolvingSharing(_, pickle, state, config))
+      result
     }
   }
 
-  //TODO support shared objects for all of these cases
+  private def unpickleMap[K, V, M <: Map[K, V], P](empty: M, pickle: P,
+                                                   state: mutable.Map[String, Any])(
+                                                   implicit config: PConfig[P],
+                                                   ku: Unpickler[K],
+                                                   vu: Unpickler[V]): Try[M] = {
+    import config._
+    readObjectField(pickle, prefix + "ref").transform(
+      (p: P) => {
+        readString(p).flatMap(ref => Try(state(ref).asInstanceOf[M]))
+      },
+      _ => readObjectField(pickle, prefix + "elems").flatMap(p => {
+        val KeyIndex = 0
+        val ValueIndex = 1
+        for {
+          len <- readArrayLength(p)
+          kvs <- Try {
+            (0 until len).toList.map(index => for {
+              entryPickle <- readArrayElem(p, index)
+              kp <- readArrayElem(entryPickle, KeyIndex)
+              k <- ku.unpickle(kp, state)
+              vp <- readArrayElem(entryPickle, ValueIndex)
+              v <- vu.unpickle(vp, state)
+            } yield k -> v).map(_.get)
+          }
+        } yield {
+          kvs.foldLeft[Map[K, V]](empty)((m, kv) => m.updated(kv._1, kv._2)).
+            asInstanceOf[M]
+        }
+      })
+    )
+  }
+
+  private def unpickleSeqish[T, S, P](f: Seq[T] => S, pickle: P, state: mutable.Map[String, Any])
+                               (implicit config: PConfig[P],
+                                u: Unpickler[T]): Try[S] = {
+
+    import config._
+    readObjectField(pickle, prefix + "ref").transform(
+      (p: P) => {
+        readString(p).flatMap(ref => Try(state(ref).asInstanceOf[S]))
+      },
+      _ => readObjectField(pickle, prefix + "elems").flatMap(p => {
+        readArrayLength(p).flatMap(len => {
+          val seq = (0 until len).map(index => u.unpickle(readArrayElem(p, index).get, state).get)
+          val result = f(seq)
+          Unpickler.resolvingSharing(result, pickle, state, config)
+          Try(result)
+        })
+      }
+    ))
+  }
+
   implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Seq[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Seq[T]] = {
-      import config._
-      readArrayLength(pickle).flatMap(len =>
-        Try((0 until len).map(index => unpickler.unpickle(readArrayElem(pickle, index).get, state).get))
-      )
+      unpickleSeqish[T, Seq[T], P](x => x, pickle, state)
+    }
+  }
+
+ implicit def iterableUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Iterable[T]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Iterable[T]] = {
+      unpickleSeqish[T, Iterable[T], P](x => x, pickle, state)
     }
   }
 
   implicit def setUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Set[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Set[T]] = {
-      import config._
-      readArrayLength(pickle).flatMap(len =>
-        Try((0 until len).map(index => unpickler.unpickle(readArrayElem(pickle, index).get, state).get).toSet)
-      )
+      unpickleSeqish[T, Set[T], P](x => x.toSet, pickle, state)
     }
   }
 
   implicit def optionUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[Option[T]] = new Unpickler[Option[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Option[T]] = {
-      import config._
-      readArrayLength(pickle).flatMap(len =>
-        if (len == 1)
-          readArrayElem(pickle, 0).flatMap(p => unpickler.unpickle(p, state).map(t => Some(t)))
-        else
-          Try(None)
-      )
+      val f: Seq[T] => Option[T] = {
+        case Seq(x) => Some(x)
+        case _ => None
+      }
+      unpickleSeqish[T, Option[T], P](f, pickle, state)
     }
   }
 

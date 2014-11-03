@@ -82,16 +82,8 @@ object PickleTests extends TestSuite {
       }
       "maps" - {
         val favoriteFoods = Map(ben -> apple, parent -> carrot)
-
-        "pickle" - {
-          val favoritePickles = Pickle(favoriteFoods)
-          assert(favoritePickles == expectedMapPickle)
-        }
-
-        "unpickle" - {
-          val unpickle = Unpickle[Map[Person, EdiblePlant]].from(expectedMapPickle).get
-          assert(unpickle == favoriteFoods)
-        }
+        val unpickle = Unpickle[Map[Person, EdiblePlant]].from(Pickle(favoriteFoods)).get
+        assert(unpickle == favoriteFoods)
       }
       "sorted maps" - {
         val map = SortedMap[Int, String](1 -> "Sydney", 2 -> "Inverloch")
@@ -102,32 +94,33 @@ object PickleTests extends TestSuite {
         assert(Unpickle[Date].fromString(Pickle.intoString(date)).get == date)
       }
       "seqs" - {
-        val seq = Seq("One", "Two")
-        val expectedPickle = makeArray(makeString("One"), makeString("Two"))
-
-        "pickle" - {
-          val p = Pickle(seq)
-          assert(p == expectedPickle)
+        val elem = Seq("One")
+        val seq = Seq(elem, elem)
+        val unpickle = Unpickle[Seq[Seq[String]]].from(Pickle(seq)).get
+        Predef.assert(unpickle == seq)
+        "shared object support" - {
+          val e1 = unpickle(0)
+          val e2 = unpickle(1)
+          assert(e1 eq e2)
         }
-        "unpickle" - {
-          val unpickle = Unpickle[Seq[String]].from(expectedPickle).get
-          assert(unpickle == seq)
-        }
+      }
+      "iterable" - {
+        val it = Iterable(1, 2, 3)
+        val unpickle = Unpickle[Iterable[Int]].from(Pickle(it)).get
+        Predef.assert(unpickle == it)
       }
       "sets" - {
-        val set = Set("One", "Two")
-        val expectedPickle = makeArray(makeString("One"), makeString("Two"))
-
-        "pickle" - {
-          val p = Pickle(set)
-          assert(p == expectedPickle)
-        }
-        "unpickle" - {
-          val unpickle = Unpickle[Set[String]].from(expectedPickle).get
-          assert(unpickle == set)
+        val set = Set(1, 2)
+        val unpickle = Unpickle[Set[Int]].from(Pickle(set)).get
+        assert(unpickle == set)
+        "shared object support" - {
+          val seq = Unpickle[Seq[Set[Int]]].from(Pickle(Seq(Set(1), Set(1)))).get
+          val e1 = seq(0)
+          val e2 = seq(1)
+          assert(e1 eq e2)
         }
       }
-      "cycle handling" - {
+      "tuple shared object support" - {
         assert(brothers._1.parent eq brothers._2.parent)
 
         val pickle = Pickle(brothers)
@@ -149,10 +142,10 @@ object PickleTests extends TestSuite {
         assert(Success(benDetails) == actual)
       }
   }
-    "with acyclic config"-{
-      implicit val acyclicConfig = JsConfig(isCyclesSupported = false)
+    "with non-shared config"-{
+      implicit val acyclicConfig = JsConfig(areSharedObjectsSupported = false)
 
-      "over cyclic structure"-{
+      "over shared structure"-{
 
         assert(brothers._1.parent eq brothers._2.parent)
 

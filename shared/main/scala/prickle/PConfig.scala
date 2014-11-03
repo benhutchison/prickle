@@ -14,11 +14,14 @@ trait PConfig[P] extends PReader[P] with PBuilder[P] {
 
   def prefix: String
 
-  def isCyclesSupported: Boolean
+  def areSharedObjectsSupported: Boolean
+
+  @deprecated("Use areSharedObjectsSupported instead. (Misleadingly name)", "1.1.0")
+  def isCyclesSupported: Boolean = areSharedObjectsSupported
 
 }
 
-case class JsConfig(val prefix: String = "#", val isCyclesSupported: Boolean = true)
+case class JsConfig(val prefix: String = "#", val areSharedObjectsSupported: Boolean = true)
   extends PConfig[JsValue] with JsBuilder with JsReader {
 
   def onUnpickle(id: String, value: Any, state: mutable.Map[String, Any]) = {
@@ -27,7 +30,7 @@ case class JsConfig(val prefix: String = "#", val isCyclesSupported: Boolean = t
 
 }
 trait AcyclicPConfig[P] extends PConfig[P] {
-  def isCyclesSupported = false
+  def areSharedObjectsSupported = false
 }
 
 

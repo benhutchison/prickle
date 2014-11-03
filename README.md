@@ -13,17 +13,17 @@ It is based upon scala-js-pickling, but adds several improvements & refinements:
 Currently, prickle supports automatic, reflection-free recursive pickling of
 * Case classes
 * Case objects
-* Seqs, Sets, Maps and SortedMaps
+* Iterables, Seqs, Sets, Maps and SortedMaps
 * Dates and Durations
 * Primitives
 
 ##Getting Prickle
 
 Scala.jvm 2.10/2.11
-`"com.github.benhutchison" %% "prickle" % "1.0.3"`
+`"com.github.benhutchison" %% "prickle" % "1.1.0"`
 
 Scala.js 0.5+ on 2.10/2.11
-`"com.github.benhutchison" %%% "prickle" % "1.0.3"`
+`"com.github.benhutchison" %%% "prickle" % "1.1.0"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
@@ -92,7 +92,12 @@ object Example extends App {
   println(s"The rehydrated object graph doesnt contain duplicated lemons:\n${rehydratedSalad}\n")
 }
 ```
+## Changelog
 
+| Version | Changes |
+| --------| --------|
+| 1.0.3   | SortedMap support. Duration Support. 2.10.x binary added |
+| 1.1.0   | Collection picklers support shared objects properly. Iterable support. |
 
 ##Pickling to String by Default 
 

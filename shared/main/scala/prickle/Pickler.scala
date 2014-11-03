@@ -43,8 +43,14 @@ trait  Pickler[A] {
 /** Do not import this companion object into scope in user code.*/
 object Pickler extends MaterializePicklerFallback {
 
+  /** Rendered into English:
+    * Take a `value`, whose fields have been pickled, and the current pickle `state`,
+    * and do the right thing if shared object support is enabled:
+    * - if its the first time we've seen this object, give it an id, add it to the pickle state,
+    * and emit its' pickle normally.
+    * - if we've seen it before, don't emit a full pickle; substitute a ref to the previous occurence.*/
   def resolvingSharing[P](value: Any, fieldPickles: Seq[(String, P)], state: PickleState, config: PConfig[P]): P = {
-    if (config.isCyclesSupported) {
+    if (config.areSharedObjectsSupported) {
       state.refs.get(value).fold {
         state.seq += 1
         state.refs += value -> state.seq.toString
@@ -56,6 +62,24 @@ object Pickler extends MaterializePicklerFallback {
     }
     else {
       config.makeObject(fieldPickles)
+    }
+  }
+
+  /** As above, but for a collection whose elements are stored in a Json Array*/
+  def resolvingSharingCollection[P](coll: Any, elems: Seq[P], state: PickleState, config: PConfig[P]): P = {
+    val payload = (config.prefix + "elems", config.makeArray(elems:_*))
+    if (config.areSharedObjectsSupported) {
+      state.refs.get(coll).fold {
+        state.seq += 1
+        state.refs += coll -> state.seq.toString
+        val idTag = (config.prefix + "id", config.makeString(state.seq.toString))
+        config.makeObjectFrom(idTag, payload)
+      }(
+          id => config.makeObject(config.prefix + "ref", config.makeString(id))
+        )
+    }
+    else {
+      config.makeObjectFrom(payload)
     }
   }
 
@@ -121,39 +145,45 @@ object Pickler extends MaterializePicklerFallback {
 
   implicit def mapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[Map[K, V]] {
     def pickle[P](value: Map[K, V], state: PickleState)(implicit config: PConfig[P]): P = {
-      val entries = value.map(kv => {
+      val entries: Iterable[P] = value.map(kv => {
         val (k, v) = kv
         config.makeArray(Pickle(k, state), Pickle(v, state))
       })
-      config.makeArray(entries.toSeq: _*)
+      resolvingSharingCollection[P](value, entries.toSeq, state, config)
     }
   }
 
   implicit def sortedMapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[SortedMap[K, V]] {
     def pickle[P](value: SortedMap[K, V], state: PickleState)(implicit config: PConfig[P]): P = {
-      val entries = value.map(kv => {
+      val entries: Iterable[P] = value.map(kv => {
         val (k, v) = kv
         config.makeArray(Pickle(k, state), Pickle(v, state))
       })
-      config.makeArray(entries.toSeq: _*)
+      resolvingSharingCollection[P](value, entries.toSeq, state, config)
     }
   }
 
   implicit def seqPickler[T](implicit pickler: Pickler[T]) = new Pickler[Seq[T]] {
     def pickle[P](value: Seq[T], state: PickleState)(implicit config: PConfig[P]): P = {
-      config.makeArray(value.map(e => Pickle(e, state)): _*)
+      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
+    }
+  }
+
+  implicit def iterablePickler[T](implicit pickler: Pickler[T]) = new Pickler[Iterable[T]] {
+    def pickle[P](value: Iterable[T], state: PickleState)(implicit config: PConfig[P]): P = {
+      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)).toSeq, state, config)
     }
   }
 
   implicit def setPickler[T](implicit pickler: Pickler[T]) = new Pickler[Set[T]] {
     def pickle[P](value: Set[T], state: PickleState)(implicit config: PConfig[P]): P = {
-      config.makeArray(value.map(e => Pickle(e, state)).toSeq: _*)
+      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)).toSeq, state, config)
     }
   }
 
   implicit def optionPickler[T](implicit pickler: Pickler[T]): Pickler[Option[T]] = new Pickler[Option[T]] {
     def pickle[P](value: Option[T], state: PickleState)(implicit config: PConfig[P]): P = {
-      config.makeArray(value.map(e => Pickle(e, state)).toSeq: _*)
+      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)).toSeq, state, config)
     }
   }
 
