@@ -8,7 +8,8 @@ It is based upon scala-js-pickling, but adds several improvements & refinements:
 * [Better support for class hierarchies / sum types](#support-for-class-hierarchies-and-sum-types)
 * [Support for shared objects and cycles in the serialized object graph](#support-for-shared-objects)
 * [Unpickling a value of type T yields a Try[T]](#unpickling-yields-a-try)
-* 100% identical scala code between JVM and JS; no platform specific dependecy 
+* 100% identical scala code between JVM and JS; no platform specific dependecy
+* [Can handle Static Reference Data in the pickled object graph](#supporting-static-reference-data) 
 
 Currently, prickle supports automatic, reflection-free recursive pickling of
 * Case classes
@@ -43,7 +44,7 @@ To run:
 ```sbt
 > example/run
 ```
-Demonstrates: 
+The first example demonstrates: 
 - Basic pickling of values whose static types is the same as their runtime class.
 - Using CompositePicklers to pickle class hierarchies, i.e. values whose static type is more general than their runtime class. 
 - Support for shared objects in the pickled graph
@@ -97,7 +98,8 @@ object Example extends App {
 | Version | Changes |
 | --------| --------|
 | 1.0.3   | SortedMap support. Duration Support. 2.10.x binary added |
-| 1.1.0   | Collection picklers support shared objects properly. Iterable support. |
+| 1.1.0   | Collection picklers support shared objects properly. Iterable support.
+| 1.1.1   | Example showing how to handle static reference data in a pickled object graph.
 
 ##Pickling to String by Default 
 
@@ -213,6 +215,15 @@ but there is a subtle difference. Circular references implies there is a path th
 to the originating object. Shared references is a weaker condition, that simply implies there are 
 two different paths to the same object.  The former cannot result from the use of purely immutable data, but shared objects
 certainly can- and does- often.
+
+##Supporting Static Reference Data
+
+The second [AdvancedLookupExample](https://github.com/benhutchison/prickle/blob/master/example/src/main/scala/Example.scala) 
+shows how prickle can be extended to handle *reference data* in the pickled
+object graph. Here, *reference data* denotes pre-existing values presumed to exist the static environment on both
+the pickle and unpickle sides. When an object graph refers to such values, typically it is not
+desirable to pickle the actual data, but just a reference to it, and then to re-enstate the
+reference on the other side by looking it up from an Id. 
 
 ##Controlling Pickling via PConfig
 
