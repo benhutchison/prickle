@@ -67,14 +67,7 @@ trait PReader[P] {
 trait JsBuilder extends PBuilder[JsValue] {
   def makeNull(): JsValue = JsNull
   def makeBoolean(b: Boolean): JsValue = if (b) JsTrue else JsFalse
-  def makeNumber(x: Double): JsValue = {
-    val raw = x.toString
-    val s = if (raw.contains("."))
-      new String(raw.toCharArray.reverse.dropWhile(_ == '0').dropWhile(_ == '.').reverse)
-    else
-      raw
-    JsNumber(s)
-  }
+  def makeNumber(x: Double): JsValue = JsNumber(x.toString)
 
   def makeString(s: String): JsValue = JsString(s)
   def makeArray(elems: JsValue*): JsValue = JsArray(elems)

@@ -133,10 +133,12 @@ object PickleTests extends TestSuite {
       "case_class_with_doubly_nested_parametric_field"-{
         Unpickle[DoublyNested].from(Pickle(DoublyNested(None)))
       }
-      "intoString"-{
-        val s = Pickle.intoString(benDetails)
-        assert(expectedBenDetailsString == s)
-      }
+//Currently, this test cannot be easily written in a Jvm/JS-portable way
+//due to differences in how Numbers are rendered into json strings
+//      "intoString"-{
+//        val s = Pickle.intoString(benDetails)
+//        assert(expectedBenDetailsString == s)
+//      }
       "fromString"-{
         val actual = Unpickle[PersonalDetails].fromString(expectedBenDetailsString)
         assert(Success(benDetails) == actual)
