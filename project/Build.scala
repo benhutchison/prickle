@@ -1,9 +1,13 @@
 import sbt._
 import Keys._
 
-import scala.scalajs.sbtplugin.env.nodejs.NodeJSEnv
+//import scala.scalajs.sbtplugin.env.nodejs.NodeJSEnv
+//
+//import scala.scalajs.sbtplugin.ScalaJSPlugin.ScalaJSKeys._
 
-import scala.scalajs.sbtplugin.ScalaJSPlugin.ScalaJSKeys._
+import org.scalajs.sbtplugin.ScalaJSPlugin
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+
 
 object Build extends sbt.Build{
   val cross = new utest.jsrunner.JsCrossBuild(
@@ -53,9 +57,11 @@ object Build extends sbt.Build{
 
   lazy val root = cross.root
 
-  lazy val js = cross.js.settings(
-    (jsEnv in Test) := new NodeJSEnv
-  )
+  lazy val js = cross.js
+  js.enablePlugins(ScalaJSPlugin)
+//    .settings(
+//    (jsEnv in Test) := new NodeJSEnv
+//  )
 
   lazy val jvm = cross.jvm
 
