@@ -1,9 +1,9 @@
-import scala.scalajs.sbtplugin.ScalaJSPlugin._
+//import scala.scalajs.sbtplugin.ScalaJSPlugin
 
-import xerial.sbt.Sonatype.SonatypeKeys._
+//import xerial.sbt.Sonatype.SonatypeKeys._
 
-scalaJSSettings
+lazy val root = project.in(file(".")).enablePlugins(ScalaJSPlugin)
 
-sonatypeSettings
+//sonatypeSettings
 
 libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.0"
