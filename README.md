@@ -20,11 +20,11 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 
 ##Getting Prickle
 
-Scala.jvm 2.10/2.11
-`"com.github.benhutchison" %% "prickle" % "1.1.2"`
+Scala.jvm 2.11
+`"com.github.benhutchison" %% "prickle" % "1.1.3"`
 
-Scala.js 0.5+ on 2.10/2.11
-`"com.github.benhutchison" %%% "prickle" % "1.1.2"`
+Scala.js 0.6+ on 2.11
+`"com.github.benhutchison" %%% "prickle" % "1.1.3"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
@@ -101,6 +101,8 @@ object Example extends App {
 | 1.1.0   | Nov 14 | Collection picklers support shared objects properly. Iterable support. |
 | 1.1.1   | Jan 15 | Example showing how to handle static reference data in a pickled object graph. |
 | 1.1.2   | Jan 15 | Fix #9 Double serialization bug |
+| 1.1.3   | Jav 25 | 2.10.x support dropped, scala-js-0.6.1 support added |
+
 
 ##Pickling to String by Default 
 
