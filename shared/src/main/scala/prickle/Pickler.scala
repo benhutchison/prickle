@@ -41,7 +41,14 @@ trait  Pickler[A] {
 }
 
 /** Do not import this companion object into scope in user code.*/
-object Pickler extends MaterializePicklerFallback {
+object Pickler extends PicklerModule
+
+/**
+ * Having PicklerModule as separate class improves extensibility
+ * as other libraries can extend their companion objects from it
+ * and add their own macro-based materializers if they want to
+ */
+class PicklerModule extends MaterializePicklerFallback {
 
   /** Rendered into English:
     * Take a `value`, whose fields have been pickled, and the current pickle `state`,
