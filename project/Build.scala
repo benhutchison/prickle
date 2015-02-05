@@ -17,16 +17,11 @@ object Build extends sbt.Build{
     version := "1.1.3",
 
     scalaVersion := "2.11.5",
-    crossScalaVersions := Seq("2.10.4", "2.11.5"),
+    crossScalaVersions := Seq("2.11.5"),
 
     name := "prickle",
 
-    libraryDependencies ++= Seq( "org.scala-lang" % "scala-reflect" % scalaVersion.value % "compile"  ) ++ (
-      if (scalaVersion.value startsWith "2.11.") Nil
-      else Seq(
-        "org.scalamacros" %% "quasiquotes" % "2.0.1" % "provided",
-        compilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full)   )
-      ),
+    libraryDependencies ++= Seq( "org.scala-lang" % "scala-reflect" % scalaVersion.value % "compile"  ),
 
     publishArtifact in Test := false,
     publishTo <<= version { (v: String) =>
@@ -60,12 +55,12 @@ object Build extends sbt.Build{
   lazy val cross = CrossProject("prickle",new File("."),CrossType.Full).
     settings(sharedSettings: _*).
     jsSettings(
-      libraryDependencies += "com.github.benhutchison" %% "microjson_sjs0.6.0-RC1" % "1.1-RC1",
-      libraryDependencies += "com.lihaoyi" %% "utest_sjs0.6.0-RC1" % "0.2.5-RC1"
+      libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.1",
+      libraryDependencies += "com.lihaoyi" %%% "utest" % "0.3.0"
     ).
     jvmSettings(
-      libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.1-RC1",
-      libraryDependencies += "com.lihaoyi" %% "utest" % "0.2.5-RC1"
+      libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.1",
+      libraryDependencies += "com.lihaoyi" %% "utest" % "0.3.0"
     )
 
   lazy val js = cross.js
