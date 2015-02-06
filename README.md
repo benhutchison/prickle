@@ -101,7 +101,7 @@ object Example extends App {
 | 1.1.0   | Nov 14 | Collection picklers support shared objects properly. Iterable support. |
 | 1.1.1   | Jan 15 | Example showing how to handle static reference data in a pickled object graph. |
 | 1.1.2   | Jan 15 | Fix #9 Double serialization bug |
-| 1.1.3   | Jav 25 | 2.10.x support dropped, scala-js-0.6.1 support added |
+| 1.1.3   | Feb 15 | 2.10.x support dropped, scala-js-0.6.0 support added |
 
 
 ##Pickling to String by Default 
