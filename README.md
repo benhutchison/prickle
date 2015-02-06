@@ -272,9 +272,10 @@ val l = new Lemon()
 Pickle(l: Fruit)
 ```
  
-##Authors
+##Contributors
     
 Prickle is written and maintained by Ben Hutchison.
 
-Credit & thanks to Sebastien Doeraene for scala-js-pickling, Li Haoyi for microjson,
-and Eugene Burmako for helping fix Prickle's macros.
+Credit & thanks for prior work to Sebastien Doeraene for scala-js-pickling, Li Haoyi for microjson
+
+Contributors: @xeno-by, @antonkulaga, @ddispaltro, @mysticfall
