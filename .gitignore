@@ -13,4 +13,5 @@ example/project/target/*
 example/project/project/*
 .idea/*
 .idea_modules/*
+*.iml
 
