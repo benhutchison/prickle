@@ -20,7 +20,9 @@ case class CompositePickler[A <: AnyRef](picklers: Map[String, Pickler[_]] = Map
   def pickle[P](obj: A, state: PickleState)(implicit config: PConfig[P]): P = {
     if (obj != null) {
       val name = obj.getClass.getName
-      val concretePickler = picklers.get(name).get.asInstanceOf[Pickler[A]]
+      val concretePickler = picklers.get(name).getOrElse(throw new IllegalArgumentException(
+        s"CompositePickler doesn't know class '$name'. Known classes: ${picklers.keys.mkString(", ")}")
+      ).asInstanceOf[Pickler[A]]
       config.makeObject(Seq(
         (CompositePickler.classKey, config.makeString(name)),
         (CompositePickler.valueKey, Pickle(obj, state)(concretePickler, config))))
