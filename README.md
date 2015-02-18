@@ -121,7 +121,7 @@ this from the String parameter.
 ```
 val p = Person("Ben", "Hutchison")
 
-val s: String = Pickle.toString(p)
+val s: String = Pickle.intoString(p)
 
 val tryPerson = Unpickle[Person].fromString(s)
 ```
