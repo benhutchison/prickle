@@ -243,6 +243,49 @@ These *internal keys* are
 - cls: the concrete class of a pickled object
 - val: identifies the fields of a pickled object
 
+##Solving chicken and egg pickling problem
+
+Situation of having  circular dependencies is very common and makes pickling a little bit complicating.
+Consider the following trait Hierarchy.
+
+```scala
+
+    trait Rule
+    trait ArcRule(propertyName:String) extends Rule
+
+    trait AndRule(label:String,rules:Rule*) extends Rule
+```
+
+If you define picklers in a common way then you will get into trouble
+
+```scala
+  implicit val rulePickler: PicklerPair[Rule] = CompositePickler[Rule]
+    .concreteType[ArcRule].concreteType[AndRule]
+
+  implicit val andPickler: Pickler[AndRule] = Pickler.materializePickler[AndRule]
+  implicit val andUnpickler: Unpickler[AndRule] = Unpickler.materializeUnpickler[AndRule]
+```
+Here AndRule has Rule trait in the constructor, so andPickler requires rulePickler to be available
+in implicit scope, in the same time Rule pickler is a compound one and has AndRule as concrete type.
+That means that both rulePickler and andPickler depend on each other and we have common chicken and egg problem.
+
+To solve this problem a trick with lazy vals and explicit definitions of picklers can be used.
+
+```scala
+  implicit lazy val arcPickler = Pickler.materializePickler[ArcRule]
+  implicit lazy val arcUnpickler = Unpickler.materializeUnpickler[ArcRule]
+
+  implicit lazy val rulePickler: PicklerPair[Rule] = CompositePickler[Rule]
+    .concreteType[ArcRule].concreteType[AndRule](andPickler,andUnpickler, classTag[AndRule]  )
+
+  implicit lazy val andPickler: Pickler[AndRule] = Pickler.materializePickler[AndRule]
+  implicit lazy val andUnpickler: Unpickler[AndRule] = Unpickler.materializeUnpickler[AndRule]
+```
+
+here we make andPickler lazy and define after rulePickler. We pass and pickler explicitly to rule pickler.
+As andPickler is lazy it is initialized together with rule pickler but as it is defined below it also has rulePickler in implicit scope.
+
+
 ##Troubleshooting
 
 If you escape "Implicit Parameter Not Found" errors when you first use prickle on a non-trivial problem,
