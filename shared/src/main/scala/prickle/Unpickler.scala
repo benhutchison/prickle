@@ -178,6 +178,12 @@ object Unpickler extends MaterializeUnpicklerFallback {
     ))
   }
 
+  implicit def immutableSeqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[collection.immutable.Seq[T]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[collection.immutable.Seq[T]] = {
+      unpickleSeqish[T, collection.immutable.Seq[T], P](x => collection.immutable.Seq.apply(x: _*), pickle, state)
+    }
+  }
+
   implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Seq[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Seq[T]] = {
       unpickleSeqish[T, Seq[T], P](x => x, pickle, state)

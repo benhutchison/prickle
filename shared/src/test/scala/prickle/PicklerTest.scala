@@ -104,6 +104,11 @@ object PickleTests extends TestSuite {
           assert(e1 eq e2)
         }
       }
+      "immutable seq" - {
+        val it = collection.immutable.Seq(1, 2, 3)
+        val unpickle = Unpickle[collection.immutable.Seq[Int]].from(Pickle(it)).get
+        Predef.assert(unpickle == it)
+      }
       "iterable" - {
         val it = Iterable(1, 2, 3)
         val unpickle = Unpickle[Iterable[Int]].from(Pickle(it)).get

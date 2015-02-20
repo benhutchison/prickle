@@ -163,6 +163,14 @@ object Pickler extends MaterializePicklerFallback {
     }
   }
 
+  implicit def immutableSeqPickler[T](implicit pickler: Pickler[T]) =
+    new Pickler[collection.immutable.Seq[T]] {
+
+    def pickle[P](value: collection.immutable.Seq[T], state: PickleState)(implicit config: PConfig[P]): P = {
+      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
+    }
+  }
+
   implicit def seqPickler[T](implicit pickler: Pickler[T]) = new Pickler[Seq[T]] {
     def pickle[P](value: Seq[T], state: PickleState)(implicit config: PConfig[P]): P = {
       resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
