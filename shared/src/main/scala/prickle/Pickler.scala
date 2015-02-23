@@ -143,7 +143,7 @@ object Pickler extends MaterializePicklerFallback {
       config.makeNumber(x.getTime)
   }
 
-  implicit def mapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[Map[K, V]] {
+  implicit def mapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]): Pickler[Map[K, V]] = new Pickler[Map[K, V]] {
     def pickle[P](value: Map[K, V], state: PickleState)(implicit config: PConfig[P]): P = {
       val entries: Iterable[P] = value.map(kv => {
         val (k, v) = kv
@@ -153,7 +153,7 @@ object Pickler extends MaterializePicklerFallback {
     }
   }
 
-  implicit def sortedMapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[SortedMap[K, V]] {
+  implicit def sortedMapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]): Pickler[SortedMap[K, V]] = new Pickler[SortedMap[K, V]] {
     def pickle[P](value: SortedMap[K, V], state: PickleState)(implicit config: PConfig[P]): P = {
       val entries: Iterable[P] = value.map(kv => {
         val (k, v) = kv
@@ -163,19 +163,25 @@ object Pickler extends MaterializePicklerFallback {
     }
   }
 
-  implicit def seqPickler[T](implicit pickler: Pickler[T]) = new Pickler[Seq[T]] {
+  implicit def listPickler[T](implicit pickler: Pickler[T]):Pickler[List[T]] = new Pickler[List[T]] {
+    def pickle[P](value: List[T], state: PickleState)(implicit config: PConfig[P]): P = {
+      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
+    }
+  }
+
+  implicit def seqPickler[T](implicit pickler: Pickler[T]):Pickler[Seq[T]] = new Pickler[Seq[T]] {
     def pickle[P](value: Seq[T], state: PickleState)(implicit config: PConfig[P]): P = {
       resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
     }
   }
 
-  implicit def iterablePickler[T](implicit pickler: Pickler[T]) = new Pickler[Iterable[T]] {
+  implicit def iterablePickler[T](implicit pickler: Pickler[T]):Pickler[Iterable[T]] = new Pickler[Iterable[T]] {
     def pickle[P](value: Iterable[T], state: PickleState)(implicit config: PConfig[P]): P = {
       resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)).toSeq, state, config)
     }
   }
 
-  implicit def setPickler[T](implicit pickler: Pickler[T]) = new Pickler[Set[T]] {
+  implicit def setPickler[T](implicit pickler: Pickler[T]):Pickler[Set[T]] = new Pickler[Set[T]] {
     def pickle[P](value: Set[T], state: PickleState)(implicit config: PConfig[P]): P = {
       resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)).toSeq, state, config)
     }

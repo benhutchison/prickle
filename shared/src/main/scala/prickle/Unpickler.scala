@@ -77,7 +77,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
         l <- config.readObjectFieldNum(pickle, "l")
         m <- config.readObjectFieldNum(pickle, "m")
         h <- config.readObjectFieldNum(pickle, "h")
-      } yield ((h.toLong << 44) | (m.toLong << 22) | l.toLong)
+      } yield (h.toLong << 44) | (m.toLong << 22) | l.toLong
     }
   }
 
@@ -108,7 +108,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
       config.readNumber(pickle).map(_.toLong).map(new Date(_))
   }
 
-  implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]) =  new Unpickler[Map[K, V]] {
+  implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]): Unpickler[Map[K, V]]  =  new Unpickler[Map[K, V]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Map[K, V]] = {
 
       val result = unpickleMap[K, V, Map[K, V], P](Map.empty, pickle, state)
@@ -117,7 +117,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
     }
   }
 
-  implicit def sortedMapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V], ord: Ordering[K]) =  new Unpickler[SortedMap[K, V]] {
+  implicit def sortedMapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V], ord: Ordering[K]):Unpickler[SortedMap[K, V]] =  new Unpickler[SortedMap[K, V]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[SortedMap[K, V]] = {
 
       val result = unpickleMap[K, V, SortedMap[K, V], P](SortedMap.empty, pickle, state)
@@ -178,19 +178,25 @@ object Unpickler extends MaterializeUnpicklerFallback {
     ))
   }
 
-  implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Seq[T]] {
+  implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[Seq[T]]  =  new Unpickler[Seq[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Seq[T]] = {
       unpickleSeqish[T, Seq[T], P](x => x, pickle, state)
     }
   }
 
- implicit def iterableUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Iterable[T]] {
+  implicit def listUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[List[T]]  =  new Unpickler[List[T]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[List[T]] = {
+      unpickleSeqish[T, List[T], P](x => x.toList, pickle, state)
+    }
+  }
+
+ implicit def iterableUnpickler[T](implicit unpickler: Unpickler[T]):Unpickler[Iterable[T]] =  new Unpickler[Iterable[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Iterable[T]] = {
       unpickleSeqish[T, Iterable[T], P](x => x, pickle, state)
     }
   }
 
-  implicit def setUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Set[T]] {
+  implicit def setUnpickler[T](implicit unpickler: Unpickler[T]):Unpickler[Set[T]] =  new Unpickler[Set[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Set[T]] = {
       unpickleSeqish[T, Set[T], P](x => x.toSet, pickle, state)
     }
