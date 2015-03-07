@@ -114,6 +114,19 @@ object PickleTests extends TestSuite {
         val unpickle = Unpickle[Iterable[Int]].from(Pickle(it)).get
         Predef.assert(unpickle == it)
       }
+
+      "lists" - {
+        val list = List(1, 2)
+        val unpickle = Unpickle[List[Int]].from(Pickle(list)).get
+        assert(unpickle == list)
+        "shared object support" - {
+          val list = Unpickle[List[List[Int]]].from(Pickle(List(List(1), List(1)))).get
+          val e1 = list(0)
+          val e2 = list(1)
+          assert(e1 eq e2)
+        }
+      }
+
       "sets" - {
         val set = Set(1, 2)
         val unpickle = Unpickle[Set[Int]].from(Pickle(set)).get
