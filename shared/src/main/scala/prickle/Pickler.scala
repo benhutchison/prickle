@@ -177,6 +177,12 @@ object Pickler extends MaterializePicklerFallback {
     }
   }
 
+  implicit def listPickler[T](implicit pickler: Pickler[T]) = new Pickler[List[T]] {
+    def pickle[P](value: List[T], state: PickleState)(implicit config: PConfig[P]): P = {
+     resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
+    }
+  }
+
   implicit def iterablePickler[T](implicit pickler: Pickler[T]) = new Pickler[Iterable[T]] {
     def pickle[P](value: Iterable[T], state: PickleState)(implicit config: PConfig[P]): P = {
       resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)).toSeq, state, config)
