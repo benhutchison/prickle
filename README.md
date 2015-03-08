@@ -243,6 +243,11 @@ These *internal keys* are
 - cls: the concrete class of a pickled object
 - val: identifies the fields of a pickled object
 
+##Limitations
+
+* Prickle focuses on 2-way data transfer from object graph to pickled form and back. The pickled layout (ie the json) should be considered an implementation detail (issues #17 #21).
+* Objects must be unpickled with the corresponding type of pickler as they were pickled with (issue #15).
+
 ##Troubleshooting
 
 If you escape "Implicit Parameter Not Found" errors when you first use prickle on a non-trivial problem,
