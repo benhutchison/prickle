@@ -8,6 +8,7 @@ import scala.language.experimental.macros
 import microjson._
 
 import java.util.Date
+import java.util.UUID
 
 /** Use this object to invoke Unpickling from user code */
 object Unpickle {
@@ -106,6 +107,11 @@ object Unpickler extends MaterializeUnpicklerFallback {
   implicit object DateUnpickler extends Unpickler[Date] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]) =
       config.readNumber(pickle).map(_.toLong).map(new Date(_))
+  }
+
+  implicit object UUIDUnpickler extends Unpickler[UUID] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]) =
+      config.readString(pickle).flatMap(s => Try(UUID.fromString(s)))
   }
 
   implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]) =  new Unpickler[Map[K, V]] {
