@@ -14,10 +14,9 @@ object Build extends sbt.Build{
   lazy val sharedSettings = Seq(
     organization := "com.github.benhutchison",
 
-    version := "1.1.4",
+    version := "1.1.5",
 
-    scalaVersion := "2.11.5",
-    crossScalaVersions := Seq("2.11.5"),
+    scalaVersion := "2.11.6",
 
     name := "prickle",
 
@@ -55,12 +54,12 @@ object Build extends sbt.Build{
   lazy val cross = CrossProject("prickle",new File("."),CrossType.Full).
     settings(sharedSettings: _*).
     jsSettings(
-      libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.1",
-      libraryDependencies += "com.lihaoyi" %%% "utest" % "0.3.0"
+      libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.2",
+      libraryDependencies += "com.lihaoyi" %%% "utest" % "0.3.1"
     ).
     jvmSettings(
-      libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.1",
-      libraryDependencies += "com.lihaoyi" %% "utest" % "0.3.0"
+      libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.2",
+      libraryDependencies += "com.lihaoyi" %% "utest" % "0.3.1"
     )
 
   lazy val js = cross.js
@@ -68,5 +67,5 @@ object Build extends sbt.Build{
   lazy val example = Project(
     id = "example",
     base = file("example")
-  ).settings(scalaVersion := "2.11.5").aggregate(jvm).dependsOn(jvm)
+  ).settings(scalaVersion := "2.11.6").aggregate(jvm).dependsOn(jvm)
 }

@@ -116,13 +116,13 @@ object PickleTests extends TestSuite {
       }
 
       "lists" - {
-        val list = List(1, 2)
+        val list: List[Int] = List(1, 2)
         val unpickle = Unpickle[List[Int]].from(Pickle(list)).get
         assert(unpickle == list)
         "shared object support" - {
-          val list = Unpickle[List[List[Int]]].from(Pickle(List(List(1), List(1)))).get
-          val e1 = list(0)
-          val e2 = list(1)
+          val list2 = Unpickle[List[List[Int]]].from(Pickle(List(list, list))).get
+          val e1 = list2(0)
+          val e2 = list2(1)
           assert(e1 eq e2)
         }
       }
@@ -132,9 +132,9 @@ object PickleTests extends TestSuite {
         val unpickle = Unpickle[Set[Int]].from(Pickle(set)).get
         assert(unpickle == set)
         "shared object support" - {
-          val seq = Unpickle[Seq[Set[Int]]].from(Pickle(Seq(Set(1), Set(1)))).get
-          val e1 = seq(0)
-          val e2 = seq(1)
+          val set2 = Unpickle[Seq[Set[Int]]].from(Pickle(Seq(set, set))).get
+          val e1 = set2(0)
+          val e2 = set2(1)
           assert(e1 eq e2)
         }
       }

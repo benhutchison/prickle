@@ -43,17 +43,28 @@ trait  Pickler[A] {
 /** Do not import this companion object into scope in user code.*/
 object Pickler extends MaterializePicklerFallback {
 
+  private case class Identity[+A <: AnyRef](obj: A) {
+    override def equals(that: Any): Boolean = that match {
+      case that: Identity[_] => this.obj eq that.obj
+      case _ => false
+    }
+
+    override def hashCode(): Int =
+      System.identityHashCode(obj)
+  }
+
   /** Rendered into English:
     * Take a `value`, whose fields have been pickled, and the current pickle `state`,
     * and do the right thing if shared object support is enabled:
     * - if its the first time we've seen this object, give it an id, add it to the pickle state,
     * and emit its' pickle normally.
     * - if we've seen it before, don't emit a full pickle; substitute a ref to the previous occurence.*/
-  def resolvingSharing[P](value: Any, fieldPickles: Seq[(String, P)], state: PickleState, config: PConfig[P]): P = {
+  def resolvingSharing[P](value: AnyRef, fieldPickles: Seq[(String, P)], state: PickleState, config: PConfig[P]): P = {
     if (config.areSharedObjectsSupported) {
-      state.refs.get(value).fold {
+      val key = Identity(value)
+      state.refs.get(key).fold {
         state.seq += 1
-        state.refs += value -> state.seq.toString
+        state.refs += key -> state.seq.toString
         val idKey = config.prefix + "id"
         config.makeObject((idKey, config.makeString(state.seq.toString)) +: fieldPickles)
       }(
@@ -66,12 +77,13 @@ object Pickler extends MaterializePicklerFallback {
   }
 
   /** As above, but for a collection whose elements are stored in a Json Array*/
-  def resolvingSharingCollection[P](coll: Any, elems: Seq[P], state: PickleState, config: PConfig[P]): P = {
-    val payload = (config.prefix + "elems", config.makeArray(elems:_*))
+  def resolvingSharingCollection[P](coll: AnyRef, elems: Iterable[P], state: PickleState, config: PConfig[P]): P = {
+    def payload = (config.prefix + "elems", config.makeArray(elems.toVector:_*))
     if (config.areSharedObjectsSupported) {
-      state.refs.get(coll).fold {
+      val key = Identity(coll)
+      state.refs.get(key).fold {
         state.seq += 1
-        state.refs += coll -> state.seq.toString
+        state.refs += key -> state.seq.toString
         val idTag = (config.prefix + "id", config.makeString(state.seq.toString))
         config.makeObjectFrom(idTag, payload)
       }(
@@ -149,7 +161,7 @@ object Pickler extends MaterializePicklerFallback {
         val (k, v) = kv
         config.makeArray(Pickle(k, state), Pickle(v, state))
       })
-      resolvingSharingCollection[P](value, entries.toSeq, state, config)
+      resolvingSharingCollection[P](value, entries, state, config)
     }
   }
 
@@ -159,7 +171,7 @@ object Pickler extends MaterializePicklerFallback {
         val (k, v) = kv
         config.makeArray(Pickle(k, state), Pickle(v, state))
       })
-      resolvingSharingCollection[P](value, entries.toSeq, state, config)
+      resolvingSharingCollection[P](value, entries, state, config)
     }
   }
 
@@ -191,7 +203,7 @@ object Pickler extends MaterializePicklerFallback {
 
   implicit def setPickler[T](implicit pickler: Pickler[T]) = new Pickler[Set[T]] {
     def pickle[P](value: Set[T], state: PickleState)(implicit config: PConfig[P]): P = {
-      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)).toSeq, state, config)
+      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
     }
   }
 

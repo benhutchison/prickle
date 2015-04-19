@@ -1,5 +1,6 @@
 package prickle
 
+import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.SortedMap
 import scala.util.{Success, Failure, Try}
 import collection.mutable
@@ -130,7 +131,8 @@ object Unpickler extends MaterializeUnpicklerFallback {
                                                    state: mutable.Map[String, Any])(
                                                    implicit config: PConfig[P],
                                                    ku: Unpickler[K],
-                                                   vu: Unpickler[V]): Try[M] = {
+                                                   vu: Unpickler[V],
+                                                   cbf: CanBuildFrom[Nothing, (K, V), M]): Try[M] = {
     import config._
     readObjectField(pickle, prefix + "ref").transform(
       (p: P) => {
@@ -142,7 +144,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
         for {
           len <- readArrayLength(p)
           kvs <- Try {
-            (0 until len).toList.map(index => for {
+            (0 until len).toVector.map(index => for {
               entryPickle <- readArrayElem(p, index)
               kp <- readArrayElem(entryPickle, KeyIndex)
               k <- ku.unpickle(kp, state)
@@ -151,8 +153,9 @@ object Unpickler extends MaterializeUnpicklerFallback {
             } yield k -> v).map(_.get)
           }
         } yield {
-          kvs.foldLeft[Map[K, V]](empty)((m, kv) => m.updated(kv._1, kv._2)).
-            asInstanceOf[M]
+          val builder = cbf()
+          kvs.foreach(kv => builder+= kv._1 -> kv._2)
+          builder.result()
         }
       })
     )
