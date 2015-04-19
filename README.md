@@ -21,10 +21,10 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 ##Getting Prickle
 
 Scala.jvm 2.11
-`"com.github.benhutchison" %% "prickle" % "1.1.4"`
+`"com.github.benhutchison" %% "prickle" % "1.1.5"`
 
 Scala.js 0.6+ on 2.11
-`"com.github.benhutchison" %%% "prickle" % "1.1.4"`
+`"com.github.benhutchison" %%% "prickle" % "1.1.5"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
