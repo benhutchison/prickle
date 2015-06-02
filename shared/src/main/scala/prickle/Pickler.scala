@@ -7,6 +7,7 @@ import scala.concurrent.duration.Duration
 import microjson._
 
 import java.util.Date
+import java.util.UUID
 
 /** Use this object to invoke Pickling from user code */
 object Pickle {
@@ -153,6 +154,11 @@ object Pickler extends MaterializePicklerFallback {
   implicit object DatePickler extends Pickler[Date] {
     def pickle[P](x: Date, state: PickleState)(implicit config: PConfig[P]): P =
       config.makeNumber(x.getTime)
+  }
+
+  implicit object UUIDPickler extends Pickler[UUID] {
+    def pickle[P](x: UUID, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeString(x.toString)
   }
 
   implicit def mapPickler[K, V](implicit kpickler: Pickler[K], vpickler: Pickler[V]) = new Pickler[Map[K, V]] {

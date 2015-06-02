@@ -1,6 +1,7 @@
 package prickle
 
 import java.util.Date
+import java.util.UUID
 
 import utest._
 import scala.collection.immutable.SortedMap
@@ -92,6 +93,11 @@ object PickleTests extends TestSuite {
       "dates" - {
         val date = new Date()
         assert(Unpickle[Date].fromString(Pickle.intoString(date)).get == date)
+      }
+      "uuids" - {
+        val uuid = UUID.randomUUID()
+        val unpickle = Unpickle[UUID].fromString(Pickle.intoString(uuid)).get
+        assert(unpickle == uuid)
       }
       "seqs" - {
         val elem = Seq("One")
