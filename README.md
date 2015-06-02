@@ -103,6 +103,8 @@ object Example extends App {
 | 1.1.2   | Jan 15 | Fix #9 Double serialization bug |
 | 1.1.3   | Feb 15 | 2.10.x support dropped, scala-js-0.6.0 support added |
 | 1.1.4   | Mar 15 | List and immutable Seq support, upgrade to Scala.js 0.6.1|
+| 1.1.5   | Apr 15 | Performance improvement: use object identity for equality check during unpickle, using mutable Builder during Map unpickle |
+| 1.1.6   | Jun 15 | Performance: use builder for Seq/Iterable collections. UUID support. Upgrade scalajs 0.6.3 |
 
 
 ##Pickling to String by Default 

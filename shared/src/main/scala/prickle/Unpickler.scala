@@ -167,19 +167,22 @@ object Unpickler extends MaterializeUnpicklerFallback {
     )
   }
 
-  private def unpickleSeqish[T, S, P](f: Seq[T] => S, pickle: P, state: mutable.Map[String, Any])
+  private def unpickleSeqish[T, S[_], P](pickle: P, state: mutable.Map[String, Any])
                                (implicit config: PConfig[P],
-                                u: Unpickler[T]): Try[S] = {
+                                u: Unpickler[T],
+                                cbf: CanBuildFrom[Nothing, T, S[T]]): Try[S[T]] = {
 
     import config._
     readObjectField(pickle, prefix + "ref").transform(
       (p: P) => {
-        readString(p).flatMap(ref => Try(state(ref).asInstanceOf[S]))
+        readString(p).flatMap(ref => Try(state(ref).asInstanceOf[S[T]]))
       },
       _ => readObjectField(pickle, prefix + "elems").flatMap(p => {
         readArrayLength(p).flatMap(len => {
-          val seq = (0 until len).map(index => u.unpickle(readArrayElem(p, index).get, state).get)
-          val result = f(seq)
+          val builder = cbf()
+          (0 until len).foreach(index =>
+            builder += u.unpickle(readArrayElem(p, index).get, state).get)
+          val result = builder.result()
           Unpickler.resolvingSharing(result, pickle, state, config)
           Try(result)
         })
@@ -189,41 +192,37 @@ object Unpickler extends MaterializeUnpicklerFallback {
 
   implicit def listUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[List[T]]  =  new Unpickler[List[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[List[T]] = {
-      unpickleSeqish[T, List[T], P](x => x.toList, pickle, state)
+      unpickleSeqish[T, List, P](pickle, state)
     }
   }
 
   implicit def immutableSeqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[collection.immutable.Seq[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[collection.immutable.Seq[T]] = {
-      unpickleSeqish[T, collection.immutable.Seq[T], P](x => collection.immutable.Seq.apply(x: _*), pickle, state)
+      unpickleSeqish[T, collection.immutable.Seq, P](pickle, state)
     }
   }
 
   implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Seq[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Seq[T]] = {
-      unpickleSeqish[T, Seq[T], P](x => x, pickle, state)
+      unpickleSeqish[T, Seq, P](pickle, state)
     }
   }
 
  implicit def iterableUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Iterable[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Iterable[T]] = {
-      unpickleSeqish[T, Iterable[T], P](x => x, pickle, state)
+      unpickleSeqish[T, Iterable, P](pickle, state)
     }
   }
 
   implicit def setUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Set[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Set[T]] = {
-      unpickleSeqish[T, Set[T], P](x => x.toSet, pickle, state)
+      unpickleSeqish[T, Set, P](pickle, state)
     }
   }
 
   implicit def optionUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[Option[T]] = new Unpickler[Option[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Option[T]] = {
-      val f: Seq[T] => Option[T] = {
-        case Seq(x) => Some(x)
-        case _ => None
-      }
-      unpickleSeqish[T, Option[T], P](f, pickle, state)
+      unpickleSeqish[T, List, P](pickle, state).map(_.headOption)
     }
   }
 

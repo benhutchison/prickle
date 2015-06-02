@@ -86,6 +86,14 @@ object PickleTests extends TestSuite {
         val unpickle = Unpickle[Map[Person, EdiblePlant]].from(Pickle(favoriteFoods)).get
         assert(unpickle == favoriteFoods)
       }
+      "option none" - {
+        //Since Picklers are Invariant, a Pickler[Some[T]] is not <: of Picker[Option[T]]
+        //therefore, care must be taken with the static type of the pickled option
+        assert(Unpickle[Option[Int]].from(Pickle(Option.empty[Int])).get == None)
+      }
+      "option some" - {
+        assert(Unpickle[Option[Int]].from(Pickle(Option(7))).get == Some(7))
+      }
       "sorted maps" - {
         val map = SortedMap[Int, String](1 -> "Sydney", 2 -> "Inverloch")
         assert(Unpickle[SortedMap[Int, String]].fromString(Pickle.intoString(map)).get == map)

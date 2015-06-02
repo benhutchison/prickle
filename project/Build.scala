@@ -14,7 +14,7 @@ object Build extends sbt.Build{
   lazy val sharedSettings = Seq(
     organization := "com.github.benhutchison",
 
-    version := "1.1.5",
+    version := "1.1.6",
 
     scalaVersion := "2.11.6",
 
