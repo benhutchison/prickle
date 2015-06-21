@@ -100,6 +100,9 @@ object AdvancedLookupExample extends App {
   implicit val fruitPickler: PicklerPair[Fruit] = CompositePickler[Fruit].
     concreteType[Apple].concreteType[Banana].concreteType[Mandarine]
 
+//  implicit val fruitPickler2: PicklerPair[Fruit] = CompositePickler[Fruit].
+//    concreteType[Apple].concreteType[Banana].concreteType[Mandarine]
+
   val fruitPickles = Pickle.intoString(fruits)
 
   println(s"In the pickled json, the banana and mandarine reference data" +
