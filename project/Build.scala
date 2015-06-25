@@ -14,7 +14,7 @@ object Build extends sbt.Build{
   lazy val sharedSettings = Seq(
     organization := "com.github.benhutchison",
 
-    version := "1.1.6",
+    version := "1.1.7",
 
     scalaVersion := "2.11.6",
 
@@ -54,11 +54,11 @@ object Build extends sbt.Build{
   lazy val cross = CrossProject("prickle",new File("."),CrossType.Full).
     settings(sharedSettings: _*).
     jsSettings(
-      libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.2",
+      libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.3",
       libraryDependencies += "com.lihaoyi" %%% "utest" % "0.3.1"
     ).
     jvmSettings(
-      libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.2",
+      libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.3",
       libraryDependencies += "com.lihaoyi" %% "utest" % "0.3.1"
     )
 
