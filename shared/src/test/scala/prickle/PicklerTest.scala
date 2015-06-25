@@ -81,6 +81,11 @@ object PickleTests extends TestSuite {
           }
         }
       }
+      "unit" - {
+        //https://github.com/benhutchison/prickle/issues/26
+        val unpickle = Unpickle[Unit].from(Pickle(())).get
+        assert(unpickle == ())
+      }
       "maps" - {
         val favoriteFoods = Map(ben -> apple, parent -> carrot)
         val unpickle = Unpickle[Map[Person, EdiblePlant]].from(Pickle(favoriteFoods)).get

@@ -145,6 +145,10 @@ object Pickler extends MaterializePicklerFallback {
       config.makeString(x)
   }
 
+  implicit object UnitPickler extends Pickler[Unit] {
+    def pickle[P](x: Unit, state: PickleState)(implicit config: PConfig[P]): P =
+      config.makeString("Unit")
+  }
 
   implicit object DurationPickler extends Pickler[Duration] {
     def pickle[P](x: Duration, state: PickleState)(implicit config: PConfig[P]): P =

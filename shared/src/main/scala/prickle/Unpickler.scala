@@ -100,6 +100,10 @@ object Unpickler extends MaterializeUnpicklerFallback {
     }
   }
 
+  implicit object UnitUnpickler extends Unpickler[Unit] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]) = Try(())
+  }
+
   implicit object DurationUnpickler extends Unpickler[Duration] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Duration] =
       LongUnpickler.unpickle(pickle, state).map(f => Duration.fromNanos(f))
