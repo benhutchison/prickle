@@ -287,3 +287,5 @@ Prickle is written and maintained by Ben Hutchison.
 Credit & thanks for prior work to Sebastien Doeraene for scala-js-pickling, Li Haoyi for microjson
 
 Contributors: @xeno-by, @antonkulaga, @ddispaltro, @mysticfall
+
+YourKit is kindly supporting this open source project with its full-featured [Java Profiler](http://www.yourkit.com/java/profiler/index.jsp).
