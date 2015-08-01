@@ -137,7 +137,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
     }
   }
 
-  private def unpickleMap[K, V, M <: Map[K, V], P](empty: M, pickle: P,
+  def unpickleMap[K, V, M <: Map[K, V], P](empty: M, pickle: P,
                                                    state: mutable.Map[String, Any])(
                                                    implicit config: PConfig[P],
                                                    ku: Unpickler[K],
@@ -171,7 +171,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
     )
   }
 
-  private def unpickleSeqish[T, S[_], P](pickle: P, state: mutable.Map[String, Any])
+  def unpickleSeqish[T, S[_], P](pickle: P, state: mutable.Map[String, Any])
                                (implicit config: PConfig[P],
                                 u: Unpickler[T],
                                 cbf: CanBuildFrom[Nothing, T, S[T]]): Try[S[T]] = {
@@ -197,6 +197,12 @@ object Unpickler extends MaterializeUnpicklerFallback {
   implicit def listUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[List[T]]  =  new Unpickler[List[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[List[T]] = {
       unpickleSeqish[T, List, P](pickle, state)
+    }
+  }
+
+  implicit def vectorUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[Vector[T]]  =  new Unpickler[Vector[T]] {
+    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Vector[T]] = {
+      unpickleSeqish[T, Vector, P](pickle, state)
     }
   }
 

@@ -101,10 +101,12 @@ trait JsReader extends PReader[JsValue] {
     case other => error(s"array($index)", s"$other")
   }
   def readObjectField(x: JsValue, field: String): Try[JsValue] = x match {
-    case x: JsObject => Try(x.value(field))
+    case x: JsObject => Try(x.value(field)).orElse(fail(
+      s"Cannot read field '$field' of '$x', available fields: ${x.value.values.mkString(", ")}"))
     case other =>  error(s"field \'$field\'", s"$other")
   }
 
   def error(exp: String, actual: String) = Failure(new RuntimeException(s"Expected: $exp  Actual: $actual"))
 
+  def fail(msg: String) = Failure(new RuntimeException(msg))
 }

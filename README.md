@@ -21,10 +21,10 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 ##Getting Prickle
 
 Scala.jvm 2.11
-`"com.github.benhutchison" %% "prickle" % "1.1.7"`
+`"com.github.benhutchison" %% "prickle" % "1.1.9"`
 
 Scala.js 0.6+ on 2.11
-`"com.github.benhutchison" %%% "prickle" % "1.1.7"`
+`"com.github.benhutchison" %%% "prickle" % "1.1.9"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
@@ -106,6 +106,8 @@ object Example extends App {
 | 1.1.5   | Apr 15 | Performance improvement: use object identity for equality check during unpickle, using mutable Builder during Map unpickle |
 | 1.1.6   | Jun 15 | Performance: use builder for Seq/Iterable collections. UUID support. Upgrade scalajs 0.6.3 |
 | 1.1.7   | Jun 15 | Performance: microjson 1.3 removed some silly inefficiency. Support Unit picklers |
+| 1.1.8   | Jul 15 | Support Vector picklers |
+| 1.1.9   | Aug 15 | Expose some Pickler/Unpickler helper methods for use by custom picklers |
 
 
 ##Pickling to String by Default 
