@@ -161,6 +161,18 @@ object PickleTests extends TestSuite {
           val e2 = set2(1)
           assert(e1 eq e2)
         }
+        "Github issue 28 - caused by unstable Iterator order for Sets" - {
+          case class SharedFoo(id: Option[String],
+                               comment: Option[String],
+                               asdf: Set[String])
+          val expected = Set(SharedFoo(Some("a"),None,Set()),
+            SharedFoo(Some("b"),None,Set()),
+            SharedFoo(Some("c"),None,Set()),
+            SharedFoo(Some("d"),None,Set()),
+            SharedFoo(Some("e"),None,Set()))
+          val actual = Unpickle[Set[SharedFoo]].fromString(Pickle.intoString(expected))
+          Predef.assert(expected == actual.get)
+        }
       }
       "tuple shared object support" - {
         assert(brothers._1.parent eq brothers._2.parent)

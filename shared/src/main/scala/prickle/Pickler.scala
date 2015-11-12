@@ -219,7 +219,7 @@ object Pickler extends MaterializePicklerFallback {
 
   implicit def setPickler[T](implicit pickler: Pickler[T]) = new Pickler[Set[T]] {
     def pickle[P](value: Set[T], state: PickleState)(implicit config: PConfig[P]): P = {
-      resolvingSharingCollection[P](value, value.map(e => Pickle(e, state)), state, config)
+      resolvingSharingCollection[P](value, value.toSeq.map(e => Pickle(e, state)), state, config)
     }
   }
 
