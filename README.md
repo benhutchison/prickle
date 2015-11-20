@@ -152,11 +152,17 @@ Example: How to creates a PicklerPair[Fruit], that handles two cases of fruit,
 import prickle._ 
 
 implicit val fruitPickler = CompositePickler[Fruit].concreteType[Apple].concreteType[Lemon]
+
+val fruit1: Fruit = new Apple(true)
+
+val jsonString = Pickle.intoString(apple)
 ```
 
 The pickle and unpickle operations can be specified together, yielding a `PicklerPair[A]`, that knows how to pickle/unpickle values of type `A`,
 and all specified concrete subclasses. There are background implicit conversions in the `Pickler` and `Unpickler` that
 can auto-unpack `PicklerPairs` into their two parts.
+
+(Note also the detail that `fruit1` is declared to have super-type `Fruit`. Problems would result if this was omitted, as the val `fruit1` would then have inferred subtype `Apple`. In that case, the compiler will prefer to auto-generate a `Pickler[Apple]` via macro rather than use the `Pickler[Fruit]`.)
 
 ### Improved Type-Safety vs [scala-js-pickling](https://github.com/scala-js/scala-js-pickling)
 
