@@ -55,11 +55,11 @@ object Build extends sbt.Build{
     settings(sharedSettings: _*).
     jsSettings(
       libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.3",
-      libraryDependencies += "com.lihaoyi" %%% "utest" % "0.3.1"
+      libraryDependencies += "com.lihaoyi" %%% "utest" % "0.3.1" % "test"
     ).
     jvmSettings(
       libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.3",
-      libraryDependencies += "com.lihaoyi" %% "utest" % "0.3.1"
+      libraryDependencies += "com.lihaoyi" %% "utest" % "0.3.1" % "test"
     )
 
   lazy val js = cross.js
