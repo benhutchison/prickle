@@ -14,9 +14,9 @@ object Build extends sbt.Build{
   lazy val sharedSettings = Seq(
     organization := "com.github.benhutchison",
 
-    version := "1.1.10",
+    version := "1.1.11",
 
-    scalaVersion := "2.11.6",
+    scalaVersion := "2.11.8",
 
     name := "prickle",
 
@@ -52,20 +52,29 @@ object Build extends sbt.Build{
   ) ++ sonatypeSettings
 
   lazy val cross = CrossProject("prickle",new File("."),CrossType.Full).
-    settings(sharedSettings: _*).
+    settings(
+      sharedSettings: _*).
     jsSettings(
       libraryDependencies += "com.github.benhutchison" %%% "microjson" % "1.3",
-      libraryDependencies += "com.lihaoyi" %%% "utest" % "0.3.1" % "test"
+      libraryDependencies += "com.lihaoyi" %%% "utest" % "0.4.3" % "test"
     ).
     jvmSettings(
       libraryDependencies += "com.github.benhutchison" %% "microjson" % "1.3",
-      libraryDependencies += "com.lihaoyi" %% "utest" % "0.3.1" % "test"
+      libraryDependencies += "com.lihaoyi" %% "utest" % "0.4.3" % "test"
     )
+
+  lazy val root = project.in(file(".")).aggregate(js, jvm).
+    settings(
+      publishArtifact := false,
+      crossScalaVersions := Seq("2.11.8"),
+      sonatypeProfileName := "com.github.benhutchison"
+    )
+
 
   lazy val js = cross.js
   lazy val jvm   = cross.jvm
   lazy val example = Project(
     id = "example",
     base = file("example")
-  ).settings(scalaVersion := "2.11.6").aggregate(jvm).dependsOn(jvm)
+  ).aggregate(jvm).dependsOn(jvm)
 }
