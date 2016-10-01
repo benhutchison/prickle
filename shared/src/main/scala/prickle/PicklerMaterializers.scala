@@ -24,7 +24,7 @@ object PicklerMaterializersImpl {
 
     val pickleLogic = if (sym.isModuleClass) {
 
-      q"""config.makeObject("#scalaObj", config.makeString(${sym.fullName}))"""
+      q"""config.makeObject(config.prefix + "scalaObj", config.makeString(${sym.fullName}))"""
 
     } else {
       val accessors = (tpe.declarations collect {

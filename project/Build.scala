@@ -1,8 +1,7 @@
 import sbt._
 import Keys._
 
-import xerial.sbt.Sonatype.SonatypeKeys._
-import xerial.sbt.Sonatype.sonatypeSettings
+import xerial.sbt.Sonatype.autoImport._
 
 
 import org.scalajs.sbtplugin.ScalaJSPlugin
@@ -14,7 +13,7 @@ object Build extends sbt.Build{
   lazy val sharedSettings = Seq(
     organization := "com.github.benhutchison",
 
-    version := "1.1.11",
+    version := "1.1.12",
 
     scalaVersion := "2.11.8",
 
@@ -30,6 +29,10 @@ object Build extends sbt.Build{
     testFrameworks += new TestFramework("utest.runner.Framework"),
 
     scalacOptions ++= Seq("-deprecation"),
+
+    publishTo <<= version { (v: String) =>
+      Some("releases"  at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
+    },
 
     pomExtra :=
       <url>https://github.com/benhutchison/prickle</url>
@@ -49,7 +52,7 @@ object Build extends sbt.Build{
             <url>https://github.com/benhutchison</url>
           </developer>
         </developers>
-  ) ++ sonatypeSettings
+  )
 
   lazy val cross = CrossProject("prickle",new File("."),CrossType.Full).
     settings(
@@ -76,5 +79,6 @@ object Build extends sbt.Build{
   lazy val example = Project(
     id = "example",
     base = file("example")
-  ).aggregate(jvm).dependsOn(jvm)
+  ).settings(scalaVersion := "2.11.8").aggregate(jvm).dependsOn(jvm)
+
 }

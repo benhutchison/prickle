@@ -21,10 +21,10 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 ##Getting Prickle
 
 Scala.jvm 2.11
-`"com.github.benhutchison" %% "prickle" % "1.1.11"`
+`"com.github.benhutchison" %% "prickle" % "1.1.12"`
 
 Scala.js 0.6+ on 2.11
-`"com.github.benhutchison" %%% "prickle" % "1.1.11"`
+`"com.github.benhutchison" %%% "prickle" % "1.1.12"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
@@ -110,6 +110,7 @@ object Example extends App {
 | 1.1.9   | Aug 15 | Expose some Pickler/Unpickler helper methods for use by custom picklers |
 | 1.1.10  | Nov 15 | Fix #28: account for unstable Set iteration order |
 | 1.1.11  | Jul 16 | Fix incorrect utest runtime dependency, freshen libraries |
+| 1.1.12  | Oct 16 | Fix #34: fix custom pickle format prefix. Upgrade to scalajs 0.6.12 |
 
 
 ##Pickling to String by Default 

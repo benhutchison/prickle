@@ -70,7 +70,7 @@ trait JsBuilder extends PBuilder[JsValue] {
   def makeNumber(x: Double): JsValue = JsNumber(x.toString)
 
   def makeString(s: String): JsValue = JsString(s)
-  def makeArray(elems: JsValue*): JsValue = JsArray(elems)
+  def makeArray(elems: JsValue*): JsValue = JsArray(elems.toVector)
   def makeObject(fields: Seq[(String, JsValue)]): JsValue = JsObject(fields.toMap)
 }
 

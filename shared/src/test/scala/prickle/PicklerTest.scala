@@ -227,6 +227,31 @@ object PickleTests extends TestSuite {
         "no state during unpickle"-{assert(unpickleState.isEmpty)}
       }
     }
+    "pconfig custom prefix issue #34"-{
+      implicit val customConfig = JsConfig(prefix = "$")
+      import customConfig._
+      val expected = makeObjectFrom(
+        "$id" -> makeString("3"),
+        "_1" -> makeObjectFrom(
+          "$id" -> makeString("2"),
+          "$elems" -> makeArray(
+            makeObjectFrom(
+              "$id" -> makeString("1"),
+              "name" -> makeString("Ben")
+            ),
+            makeObjectFrom(
+              "$ref" -> makeString("1")
+            )
+          )
+        ),
+        "_2" -> makeObjectFrom(
+          "$scalaObj" -> makeString("prickle.AnObject")
+        )
+      )
+
+      val actual = Pickle((List(ben, ben), AnObject))
+      assert(expected == actual)
+    }
   }
 }
 
