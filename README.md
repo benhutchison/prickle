@@ -20,11 +20,11 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 
 ##Getting Prickle
 
-Scala.jvm 2.11
-`"com.github.benhutchison" %% "prickle" % "1.1.12"`
+Scala.jvm 2.11, 2.12
+`"com.github.benhutchison" %% "prickle" % "1.1.13"`
 
-Scala.js 0.6+ on 2.11
-`"com.github.benhutchison" %%% "prickle" % "1.1.12"`
+Scala.js 0.6+ on 2.11, 2.12
+`"com.github.benhutchison" %%% "prickle" % "1.1.13"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
@@ -34,7 +34,7 @@ import prickle._
 import Pickler._
 ```
 
-Prickle depends upon [microjson](https://github.com/benhutchison/MicroJson) in its default pickle configuration.
+Prickle depends upon [microjson](https://github.com/benhutchison/microjson) in its default pickle configuration.
 
 Prickle is open source under the Apache 2 license.
 
@@ -111,6 +111,7 @@ object Example extends App {
 | 1.1.10  | Nov 15 | Fix #28: account for unstable Set iteration order |
 | 1.1.11  | Jul 16 | Fix incorrect utest runtime dependency, freshen libraries |
 | 1.1.12  | Oct 16 | Fix #34: fix custom pickle format prefix. Upgrade to scalajs 0.6.12 |
+| 1.1.13  | Nov 16 | Scala 2.12, update libs, cleanup sbt files |
 
 
 ##Pickling to String by Default 
