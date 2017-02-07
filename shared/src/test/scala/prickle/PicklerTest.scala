@@ -197,19 +197,15 @@ object PickleTests extends TestSuite {
         val actual = Unpickle[PersonalDetails].fromString(expectedBenDetailsString)
         assert(Success(benDetails) == actual)
       }
-
       "case class containing aliased type, issue #37" - {
+        import TestVectorData.impl._
+        case class Model(v: Vector)
 
-        import TestVectorData.EngineInstance._
-
-        case class Model(list: Vector)
-
-        val original = Model(Vector(1, 2))
+        val original = Model(Vector(1))
 
         val json = Pickle.intoString(original)
         val actual = Unpickle[Model].fromString(json).get
         assert(actual == original)
-
       }
 
     }

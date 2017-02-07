@@ -1,45 +1,22 @@
 package prickle
 
 object TestVectorData {
-  val EngineInstance: ModelTypes = jmeModelTypes
+  val impl: AbstractTypes = ImplTypes
 
-  trait ModelTypes {
+  trait AbstractTypes {
     type Vector
+    def Vector(x: Float): Vector
 
-    trait ConstructVector {
-      def apply(): Vector
-
-      def apply(x: Float, y: Float): Vector
-    }
-
-    implicit val Vector: ConstructVector
-
-    def getVectorPickler: Pickler[Vector]
-
-    implicit val vectorPickler: Pickler[Vector] = getVectorPickler
-
-    def getVectorUnpickler: Unpickler[Vector]
-
-    implicit val vectorUnpickler: Unpickler[Vector] = getVectorUnpickler
+    implicit def getVectorPickler: Pickler[Vector]
+    implicit def getVectorUnpickler: Unpickler[Vector]
   }
 
-  object jmeModelTypes extends ModelTypes {
-    type Vector = Impl.Vector
+  object ImplTypes extends AbstractTypes {
+    case class MyVector(x: Float)
+    type Vector = MyVector
+    override def Vector(x: Float): Vector = MyVector(x)
 
     override def getVectorPickler: Pickler[Vector] = Pickler.materializePickler[Vector]
-
     override def getVectorUnpickler: Unpickler[Vector] = Unpickler.materializeUnpickler[Vector]
-
-    object Vector extends ConstructVector {
-      def apply() = Impl.Vector(0, 0)
-
-      def apply(x: Float, y: Float) = Impl.Vector(x, y)
-    }
-
   }
-
-  object Impl {
-    case class Vector(x: Float, y: Float)
-  }
-
 }
