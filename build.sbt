@@ -1,7 +1,7 @@
 lazy val sharedSettings = Seq(
     organization := "com.github.benhutchison",
 
-    version := "1.1.13",
+    version := "1.1.14",
 
     scalaVersion := "2.12.0",
 

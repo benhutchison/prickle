@@ -112,6 +112,7 @@ object Example extends App {
 | 1.1.11  | Jul 16 | Fix incorrect utest runtime dependency, freshen libraries |
 | 1.1.12  | Oct 16 | Fix #34: fix custom pickle format prefix. Upgrade to scalajs 0.6.12 |
 | 1.1.13  | Nov 16 | Scala 2.12, update libs, cleanup sbt files |
+| 1.1.14  | Feb 17 | Fix #37: better support for fields that are aliased types |
 
 
 ##Pickling to String by Default 
