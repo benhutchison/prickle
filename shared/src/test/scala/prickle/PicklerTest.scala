@@ -123,6 +123,11 @@ object PickleTests extends TestSuite {
           assert(e1 eq e2)
         }
       }
+      "indexed seq" - {
+        val seq = IndexedSeq(1, 2, 3)
+        val unpickle = Unpickle[IndexedSeq[Int]].from(Pickle(seq)).get
+        Predef.assert(unpickle == seq)
+      }
       "immutable seq" - {
         val it = collection.immutable.Seq(1, 2, 3)
         val unpickle = Unpickle[collection.immutable.Seq[Int]].from(Pickle(it)).get
