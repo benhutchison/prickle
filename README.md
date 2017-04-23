@@ -1,4 +1,4 @@
-#Prickle
+# Prickle
 
 Prickle is a library for easily pickling (serializing) object graphs between Scala and Scala.js. 
 
@@ -18,7 +18,7 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 * Dates and Durations
 * Primitives
 
-##Getting Prickle
+## Getting Prickle
 
 Scala.jvm 2.11, 2.12
 `"com.github.benhutchison" %% "prickle" % "1.1.13"`
@@ -38,7 +38,7 @@ Prickle depends upon [microjson](https://github.com/benhutchison/microjson) in i
 
 Prickle is open source under the Apache 2 license.
 
-##[Runnable Example](https://github.com/benhutchison/prickle/blob/master/example/src/main/scala/Example.scala)
+## [Runnable Example](https://github.com/benhutchison/prickle/blob/master/example/src/main/scala/Example.scala)
 
 To run:
 ```sbt
@@ -115,7 +115,7 @@ object Example extends App {
 | 1.1.14  | Feb 17 | Fix #37: better support for fields that are aliased types |
 
 
-##Pickling to String by Default 
+## Pickling to String by Default 
 
 Prickle expects you probably want to pickle to and from a json String, so this is
 the default. Because Strings are defined in both Scala and Scala.js core lib, there
@@ -142,7 +142,7 @@ based on the [microjson library](https://github.com/benhutchison/MicroJson).
 MicroJson then renders or parses the JSON object graph to a flat String.
 
 
-##Support for Class Hierarchies and Sum Types
+## Support for Class Hierarchies and Sum Types
 
 It's common to have a hierarchy of classes where the concrete type of a value is not known statically.
 In some contexts these are called [Sum Types](http://en.wikipedia.org/wiki/Tagged_union).
@@ -178,7 +178,7 @@ However, in Scala-js-pickling, the discovery of missing un/picklers occurs at ru
 ![Composite Picklers Vs Singleton Registry](/docs/CompositePicklersVsRegistry.png?raw=true "Composite Picklers Vs Singleton Registry")
 
 
-##Picklers, Unpicklers, Macros and Formats
+## Picklers, Unpicklers, Macros and Formats
 
 Like scala-pickling and scala-js-pickling, prickle uses implicit `Pickler[T]` and `Unpickler[T]` type-classes to transform values of type T. 
 
@@ -219,7 +219,7 @@ object graphs, so the unpickle operation attempts to move from a higher entropy 
 Prickle acknowledges the possibility of failure by returning a Try[T] when attempting to unpickle 
 ([An extended talk about the philosophy guiding this design, with supa-crunch audio](https://www.youtube.com/watch?v=ujpHtodp6OQ)) 
 
-##Support for Shared objects
+## Support for Shared objects
 
 What is meant by "shared" here are objects that are referenced more than once in an object graph.
 To avoid duplicating such objects when pickling, prickle's algorithm remembers what objects it has
@@ -236,7 +236,7 @@ to the originating object. Shared references is a weaker condition, that simply 
 two different paths to the same object.  The former cannot result from the use of purely immutable data, but shared objects
 certainly can- and does- often.
 
-##Supporting Static Reference Data
+## Supporting Static Reference Data
 
 The second [AdvancedLookupExample](https://github.com/benhutchison/prickle/blob/master/example/src/main/scala/Example.scala) 
 shows how prickle can be extended to handle *reference data* in the pickled
@@ -245,7 +245,7 @@ the pickle and unpickle sides. When an object graph refers to such values, typic
 desirable to pickle the actual data, but just a reference to it, and then to re-enstate the
 reference on the other side by looking it up from an Id. 
 
-##Controlling Pickling via PConfig
+## Controlling Pickling via PConfig
 
 The pickle and unpickle operations take an implicit PConfig ("pickle-config") which specifies:
 
@@ -265,7 +265,7 @@ These *internal keys* are
 * Prickle focuses on 2-way data transfer from object graph to pickled form and back. The pickled layout (ie the json) should be considered an implementation detail (issues #17 #21).
 * Objects must be unpickled with the corresponding type of pickler as they were pickled with (issue #15).
 
-##Troubleshooting
+## Troubleshooting
 
 If you escape "Implicit Parameter Not Found" errors when you first use prickle on a non-trivial problem,
 you're very lucky! For the rest of you, here's some tips for diagnosing such problems:
@@ -294,7 +294,7 @@ val l = new Lemon()
 Pickle(l: Fruit)
 ```
  
-##Contributors
+## Contributors
     
 Prickle is written and maintained by Ben Hutchison.
 
