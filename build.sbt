@@ -1,16 +1,16 @@
 lazy val sharedSettings = Seq(
     organization := "com.github.benhutchison",
 
-    version := "1.1.14",
+    version := "1.1.16",
 
-    scalaVersion := "2.12.0",
+    scalaVersion := "2.13.2",
 
     name := "prickle",
 
     libraryDependencies ++= Seq(
-      "com.github.benhutchison" %%% "microjson" % "1.4",
+      "com.github.benhutchison" %%% "microjson" % "1.6",
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "compile",
-      "com.lihaoyi" %%% "utest" % "0.4.4" % "test"
+      "com.lihaoyi" %%% "utest" % "0.7.4" % "test"
      ),
 
     publishArtifact in Test := false,
@@ -39,14 +39,17 @@ lazy val sharedSettings = Seq(
         </developers>
   )
 
-  lazy val cross = crossProject.in(file(".")).settings(sharedSettings: _*)
+  lazy val cross = crossProject(JSPlatform, JVMPlatform).in(file(".")).settings(sharedSettings: _*)
 
   lazy val root = project.in(file(".")).aggregate(js, jvm).
     settings(
       publishArtifact := false,
-      crossScalaVersions := Seq("2.11.8", "2.12.0"),
+      crossScalaVersions := Seq("2.13.2"),
       sonatypeProfileName := "com.github.benhutchison"
     )
+
+ThisBuild / publishTo := Some(Opts.resolver.sonatypeStaging)
+ThisBuild / isSnapshot := true
 
 
   lazy val js = cross.js
@@ -54,4 +57,4 @@ lazy val sharedSettings = Seq(
   lazy val example = Project(
     id = "example",
     base = file("example")
-  ).settings(scalaVersion := "2.12.0").aggregate(jvm).dependsOn(jvm)
+  ).settings(scalaVersion := "2.13.2").aggregate(jvm).dependsOn(jvm)

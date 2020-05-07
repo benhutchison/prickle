@@ -1,13 +1,11 @@
 package prickle
 
-import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.SortedMap
-import scala.util.{Success, Failure, Try}
-import collection.mutable
+import scala.util.{Failure, Success, Try}
+import scala.collection.{Factory, mutable}
 import scala.concurrent.duration.Duration
 import scala.language.experimental.macros
 import microjson._
-
 import java.util.Date
 import java.util.UUID
 
@@ -16,6 +14,7 @@ object Unpickle {
 
   def apply[A](implicit u: Unpickler[A]) = UnpickledCurry[A](u)
 }
+
 case class UnpickledCurry[A](u: Unpickler[A]) {
 
   def from[P](p: P, state: mutable.Map[String, Any] = mutable.Map.empty)
@@ -24,7 +23,7 @@ case class UnpickledCurry[A](u: Unpickler[A]) {
   }
 
   def fromString(json: String, state: mutable.Map[String, Any] = mutable.Map.empty)
-             (implicit config: PConfig[JsValue]): Try[A] = {
+                (implicit config: PConfig[JsValue]): Try[A] = {
     Try(Json.read(json)).flatMap(jsValue =>
       u.unpickle(jsValue, state)(config))
   }
@@ -41,16 +40,16 @@ trait Unpickler[A] {
   def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[A]
 }
 
-/** Do not import this companion object into scope in user code.*/
+/** Do not import this companion object into scope in user code. */
 object Unpickler extends MaterializeUnpicklerFallback {
 
   /** In english: ensure that the state is updated to include the object being unpickled (`value`),
-    * if it has an id.*/
+    * if it has an id. */
   def resolvingSharing[P](value: Any, pickle: P, state: mutable.Map[String, Any], config: PConfig[P]): Unit = {
     if (config.areSharedObjectsSupported)
       config.readObjectField(pickle, config.prefix + "id").flatMap(
         field => config.readString(field)).foreach(
-          id => state += (id -> value))
+        id => state += (id -> value))
   }
 
   implicit object BooleanUnpickler extends Unpickler[Boolean] {
@@ -119,7 +118,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
       config.readString(pickle).flatMap(s => Try(UUID.fromString(s)))
   }
 
-  implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]) =  new Unpickler[Map[K, V]] {
+  implicit def mapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V]) = new Unpickler[Map[K, V]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Map[K, V]] = {
 
       val result = unpickleMap[K, V, Map[K, V], P](Map.empty, pickle, state)
@@ -128,7 +127,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
     }
   }
 
-  implicit def sortedMapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V], ord: Ordering[K]) =  new Unpickler[SortedMap[K, V]] {
+  implicit def sortedMapUnpickler[K, V](implicit ku: Unpickler[K], vu: Unpickler[V], ord: Ordering[K]) = new Unpickler[SortedMap[K, V]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[SortedMap[K, V]] = {
 
       val result = unpickleMap[K, V, SortedMap[K, V], P](SortedMap.empty, pickle, state)
@@ -138,11 +137,11 @@ object Unpickler extends MaterializeUnpicklerFallback {
   }
 
   def unpickleMap[K, V, M <: Map[K, V], P](empty: M, pickle: P,
-                                                   state: mutable.Map[String, Any])(
-                                                   implicit config: PConfig[P],
-                                                   ku: Unpickler[K],
-                                                   vu: Unpickler[V],
-                                                   cbf: CanBuildFrom[Nothing, (K, V), M]): Try[M] = {
+                                           state: mutable.Map[String, Any])(
+                                            implicit config: PConfig[P],
+                                            ku: Unpickler[K],
+                                            vu: Unpickler[V],
+                                            f: Factory[(K, V), M]): Try[M] = {
     import config._
     readObjectField(pickle, prefix + "ref").transform(
       (p: P) => {
@@ -163,8 +162,8 @@ object Unpickler extends MaterializeUnpicklerFallback {
             } yield k -> v).map(_.get)
           }
         } yield {
-          val builder = cbf()
-          kvs.foreach(kv => builder+= kv._1 -> kv._2)
+          val builder = f.newBuilder
+          kvs.foreach(kv => builder += kv._1 -> kv._2)
           builder.result()
         }
       })
@@ -172,9 +171,9 @@ object Unpickler extends MaterializeUnpicklerFallback {
   }
 
   def unpickleSeqish[T, S[_], P](pickle: P, state: mutable.Map[String, Any])
-                               (implicit config: PConfig[P],
-                                u: Unpickler[T],
-                                cbf: CanBuildFrom[Nothing, T, S[T]]): Try[S[T]] = {
+                                (implicit config: PConfig[P],
+                                 u: Unpickler[T],
+                                 f: Factory[T, S[T]]): Try[S[T]] = {
 
     import config._
     readObjectField(pickle, prefix + "ref").transform(
@@ -183,7 +182,7 @@ object Unpickler extends MaterializeUnpicklerFallback {
       },
       _ => readObjectField(pickle, prefix + "elems").flatMap(p => {
         readArrayLength(p).flatMap(len => {
-          val builder = cbf()
+          val builder = f.newBuilder
           (0 until len).foreach(index =>
             builder += u.unpickle(readArrayElem(p, index).get, state).get)
           val result = builder.result()
@@ -191,16 +190,16 @@ object Unpickler extends MaterializeUnpicklerFallback {
           Try(result)
         })
       }
-    ))
+      ))
   }
 
-  implicit def listUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[List[T]]  =  new Unpickler[List[T]] {
+  implicit def listUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[List[T]] = new Unpickler[List[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[List[T]] = {
       unpickleSeqish[T, List, P](pickle, state)
     }
   }
 
-  implicit def vectorUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[Vector[T]]  =  new Unpickler[Vector[T]] {
+  implicit def vectorUnpickler[T](implicit unpickler: Unpickler[T]): Unpickler[Vector[T]] = new Unpickler[Vector[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Vector[T]] = {
       unpickleSeqish[T, Vector, P](pickle, state)
     }
@@ -212,25 +211,19 @@ object Unpickler extends MaterializeUnpicklerFallback {
     }
   }
 
-  implicit def immutableSeqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[collection.immutable.Seq[T]] {
-    def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[collection.immutable.Seq[T]] = {
-      unpickleSeqish[T, collection.immutable.Seq, P](pickle, state)
-    }
-  }
-
-  implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Seq[T]] {
+  implicit def seqUnpickler[T](implicit unpickler: Unpickler[T]) = new Unpickler[Seq[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Seq[T]] = {
       unpickleSeqish[T, Seq, P](pickle, state)
     }
   }
 
- implicit def iterableUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Iterable[T]] {
+  implicit def iterableUnpickler[T](implicit unpickler: Unpickler[T]) = new Unpickler[Iterable[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Iterable[T]] = {
       unpickleSeqish[T, Iterable, P](pickle, state)
     }
   }
 
-  implicit def setUnpickler[T](implicit unpickler: Unpickler[T]) =  new Unpickler[Set[T]] {
+  implicit def setUnpickler[T](implicit unpickler: Unpickler[T]) = new Unpickler[Set[T]] {
     def unpickle[P](pickle: P, state: mutable.Map[String, Any])(implicit config: PConfig[P]): Try[Set[T]] = {
       unpickleSeqish[T, Set, P](pickle, state)
     }
@@ -244,9 +237,10 @@ object Unpickler extends MaterializeUnpicklerFallback {
 
   implicit def toUnpickler[A <: AnyRef](implicit pair: PicklerPair[A]): Unpickler[A] = pair.unpickler
 }
+
 trait MaterializeUnpicklerFallback {
 
   implicit def materializeUnpickler[T]: Unpickler[T] =
-    macro PicklerMaterializersImpl.materializeUnpickler[T]
+  macro PicklerMaterializersImpl.materializeUnpickler[T]
 }
 

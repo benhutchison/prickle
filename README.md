@@ -20,11 +20,14 @@ Currently, prickle supports automatic, reflection-free recursive pickling of
 
 ## Getting Prickle
 
-Scala.jvm 2.11, 2.12
-`"com.github.benhutchison" %% "prickle" % "1.1.13"`
+![Maven Central](https://img.shields.io/maven-central/v/com.github.benhutchison/prickle_2.13.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.benhutchison/prickle_2.13)
 
-Scala.js 0.6+ on 2.11, 2.12
-`"com.github.benhutchison" %%% "prickle" % "1.1.13"`
+
+Scala.jvm 2.13
+`"com.github.benhutchison" %% "prickle" % "<version above>"`
+
+Scala.js 1.x on 2.13
+`"com.github.benhutchison" %%% "prickle" % "<version above>"`
 
 To use, import the package, but do not import on the Pickler & Unpickler objects
 ```scala
@@ -113,6 +116,8 @@ object Example extends App {
 | 1.1.12  | Oct 16 | Fix #34: fix custom pickle format prefix. Upgrade to scalajs 0.6.12 |
 | 1.1.13  | Nov 16 | Scala 2.12, update libs, cleanup sbt files |
 | 1.1.14  | Feb 17 | Fix #37: better support for fields that are aliased types |
+| 1.1.15  | Apr 20 | Bad release |
+| 1.1.16  | Apr 20 | Scala 2.13 only due to cross-compile difficulties in Scala collections redesign, Scalajs 1.x |
 
 
 ## Pickling to String by Default 
